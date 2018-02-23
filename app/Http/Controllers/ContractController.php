@@ -20,7 +20,7 @@ class ContractController extends Controller
     protected $contract;
 
     public function __construct() {
-        $this->middleware('auth');
+        $this->middleware('auth:api', ['except' => ['show']]);
         $this->middleware('is.hirer');
     }
 
@@ -82,19 +82,14 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
-        return new ContractResource($contract);
+        return view('show.contract', ['contract' => $contract]);
         
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
+    public function edit($id) {
+        $contract = Contract::findOrFail($id);
+        return view('test.edit')->with(['contract'=>$contract]);
+
     }
 
     /**
@@ -108,7 +103,12 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
-        $contract->fill($request->all())->save();
+        $contract->title = $request->input('title');
+        $contract->description = $request->input('description');
+        $contract->price = $request->input('price');
+        $contract->deadline_at = $request->input('deadline_at');
+
+        $contract->save();
 
         return new ContractResource($contract);
     }

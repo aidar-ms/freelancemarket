@@ -3,7 +3,7 @@
 @section('content')
 
     <div class="row">
-        <h1 class="col-md-10">Your contracts</h1>  
+        <h1 class="col-md-10" style="padding-left: 30px">Your contracts</h1>  
         
 
         <div class="col-md-2">
@@ -32,21 +32,11 @@
 
                     <div class="modal-body">
 
-                        <form method="post" id="createContractForm" action=" {{ url('/contracts') }}">
-                            {{ csrf_field() }}
-                            <label for="title" class="col-md-6">Title</label>
-                            <input type="text" class="col-md-6" id="title" name="title">
+                        <post-contract>
 
-                            <label for="description" class="col-md-6" style="">Description</label>
-                            <textarea rows="10" cols="80" form="createContractForm" id="description" name="description"> 
-                            </textarea> 
+                            {{-- POST CONTRACT FORM --}}
 
-                            <label for="price" class="col-md-6">Price</label>
-                            <input class="col-md-6" type="number" id="price" name="price">
-
-                            <label for="deadline" class="col-md-6">Deadline</label>
-                            <input class="col-md-6" type="datetime-local" id="deadline" name="deadline">
-                        </form>
+                        </post-contract>
 
                     </div>
 
@@ -61,6 +51,8 @@
     </div>
 
     <contract-list>
+
+        {{-- CONTRACT LIST --}}
 
     </contract-list>
     
