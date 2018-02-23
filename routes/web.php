@@ -15,11 +15,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+
+
 Route::get('/home', 'UserController@index')->name('home');
 
-Route::resource('contracts', 'ContractController');
-//Route::post('/create-contract', 'ContractController@store');
-//Route::get('/contracts/:id', 'ContractController@show');
+Route::get('/contracts/{id}', 'ContractController@show');
+
 Auth::routes();
 
-//Route::get('/home', 'HomeController@index')->name('home')->middleware('role');
