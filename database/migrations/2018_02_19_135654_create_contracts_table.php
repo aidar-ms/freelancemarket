@@ -17,11 +17,12 @@ class CreateContractsTable extends Migration
             $table->increments('id');
             $table->string('title');
             $table->text('description');
-            $table->string('freelancer');
+            $table->string('freelancer')->nullable();
             $table->string('hirer');
             $table->double('price');
             $table->string('status');
-            $table->timestamp('assigned_at');
+            $table->timestamp('deadline_at');
+            $table->timestamp('assigned_at')->nullable();
             $table->timestamps();
         });
     }

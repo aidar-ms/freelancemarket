@@ -15,7 +15,7 @@ class AddUserIdToContracts extends Migration
     {
         Schema::table('contracts', function($table) {
             $table->integer('hirer_id');
-            $table->integer('freelancer_id');
+            $table->integer('freelancer_id')->nullable();
         });
     }
 
