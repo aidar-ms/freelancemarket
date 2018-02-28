@@ -8,10 +8,13 @@ use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Http\Request;
 use App\Http\Requests;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Contract as ContractResource;
 use App\Contract;
 use App\User;
+use App\Request as ContractRequest;
+use Carbon\Carbon;
 
 class ContractController extends Controller
 {
@@ -21,7 +24,15 @@ class ContractController extends Controller
 
     public function __construct() {
         $this->middleware('auth:api', ['except' => ['show']]);
-        $this->middleware('is.hirer');
+        $this->middleware('is.hirer', ['only' => ['store', 'update', 'destroy', 'getRequestList', 'enterContract']]);
+    }
+
+    private function isHirer() {
+        if(Auth::user()->role==='hirer') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -31,9 +42,16 @@ class ContractController extends Controller
      */
     public function index()
     {
-        $userContracts = Contract::where('email', Auth::user()->email)->orderBy('created_at', 'desc')->get();
+        if($this->isHirer()) {
+            $contracts = Contract::where('hirer_email', Auth::user()->email)->orderBy('created_at', 'desc')->get();
+        } elseif (!$this->isHirer()) {
+            $contracts = Contract::where(['freelancer_email' => Auth::user()->email, 'status' => 'active'])->orderBy('created_at', 'desc')->get();
+        } else {
+            throw new Exception('Role was not determined');
+        }
         
-        return ContractResource::collection($userContracts);
+        
+        return ContractResource::collection($contracts);
     }
 
     /**
@@ -58,10 +76,10 @@ class ContractController extends Controller
 
         $contract->title = $request->input('title');
         $contract->description = $request->input('description');
-        $contract->price = $request->input('price');
-        $contract->email = auth()->user()->email;
-        $contract->hirer = auth()->user()->name;
         $contract->hirer_id = auth()->user()->id;
+        $contract->hirer = auth()->user()->name;
+        $contract->hirer_email = auth()->user()->email;
+        $contract->price = $request->input('price');
         $contract->status = 'open';
         $contract->deadline_at = $request->input('deadline');
 
@@ -81,8 +99,20 @@ class ContractController extends Controller
     public function show($id)
     {
         $contract = Contract::findOrFail($id);
+        $request = null;
+        try {
+            $request = ContractRequest::where(['contract_id' => $id, 'freelancer_email' => Auth::user()->email])->firstOrFail();
+        } catch(ModelNotFoundException $e) { 
+            
+        } 
 
-        return view('show.contract', ['contract' => $contract]);
+        if($this->isHirer()) {
+
+            return view('show.hirer_view', ['contract' => $contract, 'request' => $request]);
+
+        }
+
+        return view('show.freelancer_view')->with(['contract' => $contract, 'request' => $request]);
         
     }
 
@@ -130,4 +160,42 @@ class ContractController extends Controller
         throw new Exception("didn't delete");
 
     }
+
+    public function browseContracts() {
+
+        $contracts = Contract::where('status', 'open')->orderBy('created_at', 'desc')->get();
+
+        return ContractResource::collection($contracts);
+    }
+
+
+    public function enterContract(Request $request, $id) 
+    {
+        $contract = Contract::findOrFail($id);
+
+        try {
+            $contract->freelancer_id = $request->input('id');
+            $contract->freelancer = $request->input('name');
+            $contract->freelancer_email = $request->input('email');
+            $contract->assigned_at = Carbon::now();
+            $contract->status = 'active';
+
+            $contract->save();
+        } catch(Exception $e) {
+            return $e;
+        }
+        
+        return response()->json(['success'=>'true', 'message' => 'Contract has been assigned']);
+        
+
+    
+    }
+
+    public function getRequestList() {
+        
+                $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();
+                
+                return ContractResource::collection($contractRequests);
+        
+            }
 }

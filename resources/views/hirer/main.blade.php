@@ -3,9 +3,28 @@
 @section('content')
 
     <div class="row">
+        <h1 class="col-md-10" style="padding-left: 30px">Your requests</h1>  
+
+       
+        
+    </div>
+    <request-list>
+        {{-- REQUEST LIST --}}
+    </request-list>
+
+    <div class="row">
+        <div class="separator">
+
+        </div>
+    </div>
+
+    
+{{----------------------------------------------------------------------------------------------------------------}}
+
+
+    <div class="row">
         <h1 class="col-md-10" style="padding-left: 30px">Your contracts</h1>  
         
-
         <div class="col-md-2">
             <!-- Button trigger modal -->
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createContractModal">

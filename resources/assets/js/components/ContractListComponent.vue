@@ -81,6 +81,7 @@
 
         data() {
             return {
+                requests: [],
                 contracts: [],
                 contract: {
                     title: '',

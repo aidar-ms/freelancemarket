@@ -19,3 +19,9 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::resource('contracts', 'ContractController', ['except' => ['show']]);
+Route::get('browse', 'ContractController@browseContracts');
+Route::put('enter-contract/{id}', 'ContractController@enterContract');
+
+Route::get('list-requests', 'ContractController@getRequestList');
+Route::put('accept-request/{id}', 'RequestController@acceptRequest');
+Route::put('reject-request/{id}', 'RequestController@acceptRequest');

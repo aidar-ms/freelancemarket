@@ -29,6 +29,12 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav mr-auto">
+                        @auth
+                            @if(auth()->user()->role === 'freelancer')
+                                <li><a class="nav-link" href="{{ url('browse') }}">Browse</a></li>
+                            @endif
+                            <li style="margin-left: 15px"> Your balance: <?= auth()->user()->balance ?></li>
+                        @endauth
 
                     </ul>
 
