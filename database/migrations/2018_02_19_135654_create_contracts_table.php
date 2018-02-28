@@ -17,8 +17,12 @@ class CreateContractsTable extends Migration
             $table->increments('id');
             $table->string('title');
             $table->text('description');
+            $table->integer('freelancer_id')->nullable();
             $table->string('freelancer')->nullable();
+            $table->string('freelancer_email')->nullable();
+            $table->integer('hirer_id');
             $table->string('hirer');
+            $table->string('hirer_email');
             $table->double('price');
             $table->string('status');
             $table->timestamp('deadline_at');
