@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Contract;
+use App\User;
 
 class UserController extends Controller
 {
@@ -21,11 +22,11 @@ class UserController extends Controller
     public function index() 
     {
         if(Auth::user()->role === 'freelancer') {
-            $userContracts = Contract::where('freelancer_id', Auth::user()->id)->orderBy('created_at', 'desc')->get();
-            return view('freelancer.main')->with(['userContracts' => $userContracts]);
+
+            return view('freelancer.main');
         } else if(Auth::user()->role === 'hirer') {
-            $userContracts = Contract::where('hirer_id', Auth::user()->id)->orderBy('created_at', 'desc')->get();
-            return view('hirer.main')->with('userContracts', $userContracts);
+           
+            return view('hirer.main');
         }
 
         throw new Exception('Role not defined');
@@ -97,5 +98,35 @@ class UserController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function makePayment(Request $request) {
+
+        $contract = Contract::findOrFail(decrypt($request->input('contract_id')));
+        
+        $hirer = User::where(['email' => decrypt($request->input('hirer_email'))])->firstOrFail();
+        $freelancer = User::where('email', decrypt($request->input('freelancer_email')))->firstOrFail();
+
+        $price = $contract->price;
+
+        if($hirer->balance - $price < 0) {
+            return view('hirer.response')->with(['response' => 'Insufficient funds']);
+        }
+
+        $hirer->balance -= $price;
+        $freelancer->balance += $price;
+        $contract->status = 'closed';
+
+        $contract->save();
+        $hirer->save();
+        $freelancer->save();
+
+
+        return view('hirer.response')->with(['response' => 'Payment has been transferred']);
+
+
+        
+
+
     }
 }
