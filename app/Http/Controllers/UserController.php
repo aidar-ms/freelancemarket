@@ -13,6 +13,8 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('auth:api', ['only' => ['makePayment']]);
+
     }
     /**
      * Display a listing of the resource.
@@ -100,33 +102,5 @@ class UserController extends Controller
         //
     }
 
-    public function makePayment(Request $request) {
-
-        $contract = Contract::findOrFail(decrypt($request->input('contract_id')));
-        
-        $hirer = User::where(['email' => decrypt($request->input('hirer_email'))])->firstOrFail();
-        $freelancer = User::where('email', decrypt($request->input('freelancer_email')))->firstOrFail();
-
-        $price = $contract->price;
-
-        if($hirer->balance - $price < 0) {
-            return view('hirer.response')->with(['response' => 'Insufficient funds']);
-        }
-
-        $hirer->balance -= $price;
-        $freelancer->balance += $price;
-        $contract->status = 'closed';
-
-        $contract->save();
-        $hirer->save();
-        $freelancer->save();
-
-
-        return view('hirer.response')->with(['response' => 'Payment has been transferred']);
-
-
-        
-
-
-    }
+   
 }

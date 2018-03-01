@@ -55,16 +55,6 @@ class ContractController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -86,7 +76,7 @@ class ContractController extends Controller
         $contract->save();
 
 
-        return new ContractResource($contract);
+        return ['success'=>true, 'message'=>'Contract was created'];
 
     }
 
@@ -102,9 +92,7 @@ class ContractController extends Controller
         $request = null;
         try {
             $request = ContractRequest::where(['contract_id' => $id, 'freelancer_email' => Auth::user()->email])->firstOrFail();
-        } catch(ModelNotFoundException $e) { 
-            
-        } 
+        } catch(ModelNotFoundException $e) {} 
 
         if($this->isHirer()) {
 
@@ -114,12 +102,6 @@ class ContractController extends Controller
 
         return view('show.freelancer_view')->with(['contract' => $contract, 'request' => $request]);
         
-    }
-
-    public function edit($id) {
-        $contract = Contract::findOrFail($id);
-        return view('test.edit')->with(['contract'=>$contract]);
-
     }
 
     /**
@@ -140,7 +122,7 @@ class ContractController extends Controller
 
         $contract->save();
 
-        return new ContractResource($contract);
+        return response()->json(['success'=>true, 'message'=>'Contract updated']);
     }
 
     /**
@@ -153,11 +135,9 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
        
-        if($contract->delete()) {
-            return new ContractResource($contract);
-        }
-
-        throw new Exception("didn't delete");
+        $contract->delete();
+        
+        return response()->json(['success' => true, 'message' => 'Contract deleted']);
 
     }
 
@@ -173,29 +153,54 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
-        try {
-            $contract->freelancer_id = $request->input('id');
-            $contract->freelancer = $request->input('name');
-            $contract->freelancer_email = $request->input('email');
-            $contract->assigned_at = Carbon::now();
-            $contract->status = 'active';
+        $contract->freelancer_id = $request->input('id');
+        $contract->freelancer = $request->input('name');
+        $contract->freelancer_email = $request->input('email');
+        $contract->assigned_at = Carbon::now();
+        $contract->status = 'active';
 
-            $contract->save();
-        } catch(Exception $e) {
-            return $e;
-        }
+        $contract->save();
         
-        return response()->json(['success'=>'true', 'message' => 'Contract has been assigned']);
+        return response()->json(['success'=> true, 'message' => 'Contract has been assigned']);
         
 
     
     }
 
+    public function makePayment(Request $request) {
+        
+        $contract = Contract::findOrFail(decrypt($request->input('contract_id')));
+        $hirer = User::where(['email' => decrypt($request->input('hirer_email'))])->firstOrFail();
+        $freelancer = User::where('email', decrypt($request->input('freelancer_email')))->firstOrFail();
+
+        $price = $contract->price;
+
+        if($hirer->balance - $price < 0) {
+            return response()->json(['success' => false,'message' => 'Insufficient funds']);
+        }
+
+        $hirer->balance -= $price;
+        $freelancer->balance += $price;
+        $contract->status = 'closed';
+
+        $contract->save();
+        $hirer->save();
+        $freelancer->save();
+
+
+        return response()->json(['success'=> true, 'message' => 'Payment has been transferred']);
+
+
+        
+
+
+    }
+
     public function getRequestList() {
         
-                $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();
-                
-                return ContractResource::collection($contractRequests);
+        $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();
         
-            }
+        return ContractResource::collection($contractRequests);
+
+    }
 }
