@@ -8,6 +8,7 @@
     
         <p class="small"> Contract ID: <span style="vertical-align: top"> <?= $contract->id ?> </span> </p>
         <p class="small"> Due at: <?= $contract->deadline_at ?> </p>
+        <p class="small"> Price: <?= $contract->price ?> </p>
         <p class="small"> Status: @if(!is_null($contract->freelancer))
                                         <?= 'taken by ' . $contract->freelancer?>
                                     @else

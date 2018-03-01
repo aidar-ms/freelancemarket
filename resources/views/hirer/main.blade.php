@@ -27,7 +27,7 @@
         
         <div class="col-md-2">
             <!-- Button trigger modal -->
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createContractModal">
+            <button dusk="create-contract" type="button" class="btn btn-primary" data-toggle="modal" data-target="#createContractModal">
                 Create Contract
             </button>
         </div>
