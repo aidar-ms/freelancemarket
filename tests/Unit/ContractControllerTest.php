@@ -32,37 +32,7 @@ class ExampleTest extends TestCase
     }
 
     /**
-     * Log in system test.
-     *
-     * @return void
-     */
-    public function testLogIn() {
-
-       $credentials = [
-            'email' => 'johndoe@john.doe',
-            'password' => '123456'
-       ];
-
-       $response = $this->post('login', $credentials)->assertRedirect('/');
-    }
-
-    /**
-     * Test of login system with wrong password
-     *
-     * @return void
-     */
-
-    public function testWrongPass() {
-        $credentials = [
-            'email' => 'johndoe@john.doe',
-            'password' => 'wrongpass'
-       ];
-
-       $response = $this->post('login', $credentials)->assertSessionHasErrors();
-
-    }
-    /**
-     * Test store new contract functionality
+     * Test store method
      *
      * @return void
      */
