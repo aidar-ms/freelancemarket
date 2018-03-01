@@ -25,3 +25,4 @@ Route::put('enter-contract/{id}', 'ContractController@enterContract');
 Route::get('list-requests', 'ContractController@getRequestList');
 Route::put('accept-request/{id}', 'RequestController@acceptRequest');
 Route::put('reject-request/{id}', 'RequestController@acceptRequest');
+Route::post('make-payment', 'ContractController@makePayment');
