@@ -13889,7 +13889,7 @@ module.exports = Cancel;
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(13);
-module.exports = __webpack_require__(58);
+module.exports = __webpack_require__(61);
 
 
 /***/ }),
@@ -13915,10 +13915,11 @@ window.Vue = __webpack_require__(37);
 
 Vue.component('post-contract', __webpack_require__(40));
 Vue.component('request-list', __webpack_require__(43));
-Vue.component('contract-list', __webpack_require__(46));
-Vue.component('freelancer-contract-list', __webpack_require__(49));
-Vue.component('browse-contracts', __webpack_require__(52));
-Vue.component('payment-component', __webpack_require__(55));
+Vue.component('make-request', __webpack_require__(46));
+Vue.component('contract-list', __webpack_require__(49));
+Vue.component('freelancer-contract-list', __webpack_require__(52));
+Vue.component('browse-contracts', __webpack_require__(55));
+Vue.component('payment-component', __webpack_require__(58));
 
 var app = new Vue({
   el: '#app'
@@ -47491,6 +47492,162 @@ var Component = normalizeComponent(
   __vue_scopeId__,
   __vue_module_identifier__
 )
+Component.options.__file = "resources/assets/js/components/MakeRequest.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-746c704c", Component.options)
+  } else {
+    hotAPI.reload("data-v-746c704c", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 47 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+
+    props: ['contractId'],
+
+    data: function data() {
+        return {
+            data: {
+                contract_id: ""
+            }
+        };
+    },
+    mounted: function mounted() {
+        this.data.contract_id = this.contractId;
+    },
+
+
+    methods: {
+        onSubmit: function onSubmit() {
+            var vm = this;
+
+            axios.get('/api/make-request/' + vm.data.contract_id).then(function (response) {
+                console.log(response);
+                alert('Message from server: ' + response.data.message);
+            }).catch(function (error) {
+                console.log(error);
+            });
+
+            window.location.reload();
+
+            return false;
+        }
+    }
+});
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "form",
+    {
+      attrs: { method: "post" },
+      on: {
+        submit: function($event) {
+          $event.preventDefault()
+          _vm.onSubmit($event)
+        }
+      }
+    },
+    [
+      _c("input", {
+        directives: [
+          {
+            name: "model",
+            rawName: "v-model",
+            value: _vm.data.contract_id,
+            expression: "data.contract_id"
+          }
+        ],
+        attrs: { type: "hidden" },
+        domProps: { value: _vm.data.contract_id },
+        on: {
+          input: function($event) {
+            if ($event.target.composing) {
+              return
+            }
+            _vm.$set(_vm.data, "contract_id", $event.target.value)
+          }
+        }
+      }),
+      _vm._v(" "),
+      _c("input", {
+        staticClass: "btn btn-default",
+        attrs: { type: "submit", value: "Request this contract" }
+      })
+    ]
+  )
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-746c704c", module.exports)
+  }
+}
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(1)
+/* script */
+var __vue_script__ = __webpack_require__(50)
+/* template */
+var __vue_template__ = __webpack_require__(51)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
 Component.options.__file = "resources/assets/js/components/ContractListComponent.vue"
 
 /* hot reload */
@@ -47513,7 +47670,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 47 */
+/* 50 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -47654,7 +47811,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 48 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -47967,15 +48124,15 @@ if (false) {
 }
 
 /***/ }),
-/* 49 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(1)
 /* script */
-var __vue_script__ = __webpack_require__(50)
+var __vue_script__ = __webpack_require__(53)
 /* template */
-var __vue_template__ = __webpack_require__(51)
+var __vue_template__ = __webpack_require__(54)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -48004,156 +48161,6 @@ if (false) {(function () {
     hotAPI.createRecord("data-v-588ca92c", Component.options)
   } else {
     hotAPI.reload("data-v-588ca92c", Component.options)
-  }
-  module.hot.dispose(function (data) {
-    disposed = true
-  })
-})()}
-
-module.exports = Component.exports
-
-
-/***/ }),
-/* 50 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
-/* harmony default export */ __webpack_exports__["default"] = ({
-
-    name: 'freelancer-contract-list',
-
-    data: function data() {
-        return {
-            requests: [],
-            contracts: [],
-            contract: {
-                title: '',
-                description: '',
-                price: '',
-                deadline_at: ''
-            }
-        };
-    },
-    mounted: function mounted() {
-        console.log('Component mounted.');
-    },
-    created: function created() {
-        var vm = this;
-
-        axios.get('/api/contracts').then(function (response) {
-            console.log(response);
-            vm.contracts = response.data.data;
-            console.log(vm.contracts);
-        }).catch(function (error) {
-            console.log(error);
-        });
-    }
-});
-
-/***/ }),
-/* 51 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var render = function() {
-  var _vm = this
-  var _h = _vm.$createElement
-  var _c = _vm._self._c || _h
-  return _c(
-    "div",
-    _vm._l(_vm.contracts, function(contract, index) {
-      return _c("div", { key: index, staticClass: "card card-body" }, [
-        _c("div", { staticClass: "row" }, [
-          _c("div", { staticClass: "col-md-10" }, [
-            _c("h1", { staticClass: "card-title" }, [
-              _c("a", { attrs: { href: "/contracts/" + contract.id } }, [
-                _vm._v(
-                  "\n                        " +
-                    _vm._s(contract.title) +
-                    "\n                    "
-                )
-              ])
-            ]),
-            _vm._v(" "),
-            _c("p", [_vm._v(_vm._s(contract.description))])
-          ])
-        ])
-      ])
-    })
-  )
-}
-var staticRenderFns = []
-render._withStripped = true
-module.exports = { render: render, staticRenderFns: staticRenderFns }
-if (false) {
-  module.hot.accept()
-  if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-588ca92c", module.exports)
-  }
-}
-
-/***/ }),
-/* 52 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var disposed = false
-var normalizeComponent = __webpack_require__(1)
-/* script */
-var __vue_script__ = __webpack_require__(53)
-/* template */
-var __vue_template__ = __webpack_require__(54)
-/* template functional */
-var __vue_template_functional__ = false
-/* styles */
-var __vue_styles__ = null
-/* scopeId */
-var __vue_scopeId__ = null
-/* moduleIdentifier (server only) */
-var __vue_module_identifier__ = null
-var Component = normalizeComponent(
-  __vue_script__,
-  __vue_template__,
-  __vue_template_functional__,
-  __vue_styles__,
-  __vue_scopeId__,
-  __vue_module_identifier__
-)
-Component.options.__file = "resources/assets/js/components/BrowseContracts.vue"
-
-/* hot reload */
-if (false) {(function () {
-  var hotAPI = require("vue-hot-reload-api")
-  hotAPI.install(require("vue"), false)
-  if (!hotAPI.compatible) return
-  module.hot.accept()
-  if (!module.hot.data) {
-    hotAPI.createRecord("data-v-67205dd0", Component.options)
-  } else {
-    hotAPI.reload("data-v-67205dd0", Component.options)
   }
   module.hot.dispose(function (data) {
     disposed = true
@@ -48215,7 +48222,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     created: function created() {
         var vm = this;
 
-        axios.get('/api/browse').then(function (response) {
+        axios.get('/api/contracts').then(function (response) {
             console.log(response);
             vm.contracts = response.data.data;
             console.log(vm.contracts);
@@ -48262,7 +48269,7 @@ module.exports = { render: render, staticRenderFns: staticRenderFns }
 if (false) {
   module.hot.accept()
   if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-67205dd0", module.exports)
+    require("vue-hot-reload-api")      .rerender("data-v-588ca92c", module.exports)
   }
 }
 
@@ -48276,6 +48283,156 @@ var normalizeComponent = __webpack_require__(1)
 var __vue_script__ = __webpack_require__(56)
 /* template */
 var __vue_template__ = __webpack_require__(57)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources/assets/js/components/BrowseContracts.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-67205dd0", Component.options)
+  } else {
+    hotAPI.reload("data-v-67205dd0", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 56 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+
+    name: 'freelancer-contract-list',
+
+    data: function data() {
+        return {
+            requests: [],
+            contracts: [],
+            contract: {
+                title: '',
+                description: '',
+                price: '',
+                deadline_at: ''
+            }
+        };
+    },
+    mounted: function mounted() {
+        console.log('Component mounted.');
+    },
+    created: function created() {
+        var vm = this;
+
+        axios.get('/api/browse').then(function (response) {
+            console.log(response);
+            vm.contracts = response.data.data;
+            console.log(vm.contracts);
+        }).catch(function (error) {
+            console.log(error);
+        });
+    }
+});
+
+/***/ }),
+/* 57 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "div",
+    _vm._l(_vm.contracts, function(contract, index) {
+      return _c("div", { key: index, staticClass: "card card-body" }, [
+        _c("div", { staticClass: "row" }, [
+          _c("div", { staticClass: "col-md-10" }, [
+            _c("h1", { staticClass: "card-title" }, [
+              _c("a", { attrs: { href: "/contracts/" + contract.id } }, [
+                _vm._v(
+                  "\n                        " +
+                    _vm._s(contract.title) +
+                    "\n                    "
+                )
+              ])
+            ]),
+            _vm._v(" "),
+            _c("p", [_vm._v(_vm._s(contract.description))])
+          ])
+        ])
+      ])
+    })
+  )
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-67205dd0", module.exports)
+  }
+}
+
+/***/ }),
+/* 58 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(1)
+/* script */
+var __vue_script__ = __webpack_require__(59)
+/* template */
+var __vue_template__ = __webpack_require__(60)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -48314,7 +48471,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 56 */
+/* 59 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -48371,7 +48528,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 57 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -48471,7 +48628,7 @@ if (false) {
 }
 
 /***/ }),
-/* 58 */
+/* 61 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
