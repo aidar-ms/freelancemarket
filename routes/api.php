@@ -22,7 +22,8 @@ Route::resource('contracts', 'ContractController', ['except' => ['show']]);
 Route::get('browse', 'ContractController@browseContracts');
 Route::put('enter-contract/{id}', 'ContractController@enterContract');
 
-Route::get('list-requests', 'ContractController@getRequestList');
+Route::get('list-requests', 'RequestController@getRequestList');
+Route::get('make-request/{id}', 'RequestController@makeRequest')->name('request');
 Route::put('accept-request/{id}', 'RequestController@acceptRequest');
-Route::put('reject-request/{id}', 'RequestController@acceptRequest');
+Route::put('reject-request/{id}', 'RequestController@rejectRequest');
 Route::post('make-payment', 'ContractController@makePayment');
