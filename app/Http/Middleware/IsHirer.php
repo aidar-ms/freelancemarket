@@ -16,7 +16,7 @@ class IsHirer
     public function handle($request, Closure $next)
     {
         if($request->user()->role != 'hirer') {
-            \App::abort(403, 'Unauthorized action.');
+            abort(403, 'Unauthorized action.');
         }
         return $next($request);
     }
