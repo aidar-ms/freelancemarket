@@ -18,6 +18,7 @@ window.Vue = require('vue');
 
 Vue.component('post-contract', require('./components/PostContractComponent.vue'));
 Vue.component('request-list', require('./components/RequestListComponent.vue'));
+Vue.component('make-request', require('./components/MakeRequest.vue'));
 Vue.component('contract-list', require('./components/ContractListComponent.vue'));
 Vue.component('freelancer-contract-list', require('./components/FreelancerContractList.vue'));
 Vue.component('browse-contracts', require('./components/BrowseContracts.vue'));

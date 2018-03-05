@@ -10,7 +10,7 @@
         <p class="small"> Due at: <?= $contract->deadline_at ?> </p>
         <p class="small"> Price: <?= $contract->price ?> </p>
         <p class="small"> Status: @if(!is_null($contract->freelancer))
-                                        <?= 'taken by ' . $contract->freelancer?>
+                                        <?= 'Taken by ' . $contract->freelancer?>
                                     @else
                                         <?= 'Open' ?>
                                     @endif
@@ -23,11 +23,13 @@
         <br>
 
         @if(is_null($request))
-            <a class="btn btn-default" id="request" href="{{ route('request', ['id' => $contract->id])}}" onclick="location.reload();">Request contract</a>
+            <make-request :contract-id="'{{$contract->id}}'" >
+                {{-- Make request component --}}
+            </make-request>
         @elseif($request->status === 'sent')
             <em> You've already requested this contract </em>
         @endif
-        
-        
+            
     </div>
+
 @endsection
