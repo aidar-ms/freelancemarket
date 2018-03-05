@@ -19,20 +19,13 @@ use Carbon\Carbon;
 class ContractController extends Controller
 {
 
-    protected $user;
-    protected $contract;
-
     public function __construct() {
         $this->middleware('auth:api', ['except' => ['show']]);
-        $this->middleware('is.hirer', ['only' => ['store', 'update', 'destroy', 'getRequestList', 'enterContract']]);
+        $this->middleware('is.hirer', ['only' => ['store', 'update', 'destroy', 'enterContract']]);
     }
 
     private function isHirer() {
-        if(Auth::user()->role==='hirer') {
-            return true;
-        }
-
-        return false;
+        return Auth::user()->role==='hirer' ? true : false;
     }
 
     /**
@@ -47,7 +40,7 @@ class ContractController extends Controller
         } elseif (!$this->isHirer()) {
             $contracts = Contract::where(['freelancer_email' => Auth::user()->email, 'status' => 'active'])->orderBy('created_at', 'desc')->get();
         } else {
-            throw new Exception('Role was not determined');
+            abort(500, 'Role was not determined');
         }
         
         
@@ -122,7 +115,7 @@ class ContractController extends Controller
 
         $contract->save();
 
-        return response()->json(['success'=>true, 'message'=>'Contract updated']);
+        return response()->json(['success'=>true, 'message'=>'Contract updated', 'contract' => $contract]);
     }
 
     /**
@@ -162,9 +155,7 @@ class ContractController extends Controller
         $contract->save();
         
         return response()->json(['success'=> true, 'message' => 'Contract has been assigned']);
-        
-
-    
+   
     }
 
     public function makePayment(Request $request) {
@@ -189,18 +180,6 @@ class ContractController extends Controller
 
 
         return response()->json(['success'=> true, 'message' => 'Payment has been transferred']);
-
-
-        
-
-
-    }
-
-    public function getRequestList() {
-        
-        $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();
-        
-        return ContractResource::collection($contractRequests);
 
     }
 }
