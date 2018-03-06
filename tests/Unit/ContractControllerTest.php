@@ -194,7 +194,7 @@ class ContractControllerTest extends TestCase
 
     public function testMakePayment() {
 
-        $contract = Contract::where(['status'=>'active'])->firstOrFail();
+        $contract = Contract::where(['status'=>'active'])->inRandomOrder()->firstOrFail();
         
         $paymentRequest = ['contract_id'=>encrypt($contract->id), 'hirer_email' => encrypt($contract->hirer_email), 'freelancer_email' => encrypt($contract->freelancer_email)];
 
