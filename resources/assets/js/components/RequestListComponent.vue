@@ -55,7 +55,7 @@
             axios.get('/api/list-requests')
                     .then(function(response) {
                         console.log(response);
-                        vm.requests = response.data.data;
+                        vm.requests = response.data;
                     })
                     .catch(function(error) {
                         console.log(error);
@@ -82,13 +82,13 @@
 
                 axios.put('/api/enter-contract/' + request.contract_id, this.freelancer)
                     .then(function(response) {
-                        console.log(response);
+                        alert('Message from server: ' + response.data.message);
                     })
                     .catch(function(error) {
                         alert('Error at enter-contract')
                     })
 
-                alert('Request accepted');
+                window.location.reload();
 
             },
 
@@ -96,13 +96,15 @@
 
                 axios.put('/api/reject-request/'+request.id)
                     .then(function(response) {
-                        console.log(response);
-                        alert('Request has been rejected')
+                        alert('Message from server: ' + response.data.message);
+                        window.location.reload();
                     })
                     .catch(function(error) {
                         //console.log(error);
                         alert('Error at reject request');
                     });
+                    
+                window.location.reload();
             }
 
         }

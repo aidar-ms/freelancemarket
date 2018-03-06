@@ -102,7 +102,7 @@
             axios.get('/api/contracts')
                 .then(function(response) {
                     console.log(response);
-                    vm.contracts = response.data.data;
+                    vm.contracts = response.data;
                     console.log(vm.contracts);
                 })
                 .catch(function (error) {
