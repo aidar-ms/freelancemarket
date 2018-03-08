@@ -12,18 +12,23 @@ use Illuminate\Http\Request;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+Route::get('/test', function(){
+    dd( Request::header());
+});
 
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::resource('contracts', 'ContractController', ['except' => ['show']]);
-Route::get('browse', 'ContractController@browseContracts');
-Route::put('enter-contract/{id}', 'ContractController@enterContract');
+Route::resource('contracts', 'ContractController');
+Route::put('contracts/{id}/enter', 'ContractController@enter');
+Route::get('contracts/{id}/close', 'ContractController@close');
 
-Route::get('list-requests', 'RequestController@getRequestList');
-Route::get('make-request/{id}', 'RequestController@makeRequest')->name('request');
-Route::put('accept-request/{id}', 'RequestController@acceptRequest');
-Route::put('reject-request/{id}', 'RequestController@rejectRequest');
-Route::post('make-payment', 'ContractController@makePayment');
+Route::get('browse', 'ContractController@browse');
+//Route::post('contracts/pay', 'ContractController@makePayment');
+
+Route::get('requests', 'RequestController@list');
+Route::get('requests/{id}/send', 'RequestController@send');
+Route::get('requests/{id}/accept', 'RequestController@accept');
+Route::get('requests/{id}/reject', 'RequestController@reject');
