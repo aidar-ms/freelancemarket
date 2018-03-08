@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Http\Request;
 use App\Http\Requests;
@@ -20,12 +21,36 @@ class ContractController extends Controller
 {
 
     public function __construct() {
-        $this->middleware('auth:api', ['except' => ['show']]);
-        $this->middleware('is.hirer', ['only' => ['store', 'update', 'destroy', 'enterContract']]);
+        $this->middleware('auth:api');
+        $this->middleware('is.hirer', ['only' => ['store', 'update', 'destroy', 'enter', 'close']]);
     }
 
     private function isHirer() {
         return Auth::user()->role==='hirer' ? true : false;
+    }
+
+    protected function transferPayment($contract) {
+        
+        if(!is_a($contract, 'App\Contract')) return false;
+
+        $price = $contract->price;
+        $hirer = User::where('email', $contract->hirer_email)->firstOrFail();
+        $freelancer = User::where('email', $contract->freelancer_email)->firstOrFail();
+
+        if($hirer->balance - $price < 0) return false;
+
+        $hirer->balance -= $contract->price;
+        $freelancer->balance += $contract->price;
+        $contract->status = 'closed';
+
+        DB::transaction(function() use($contract, $hirer, $freelancer) {
+            $contract->save(); 
+            $hirer->save(); 
+            $freelancer->save();
+        });
+
+        return true;
+
     }
 
     /**
@@ -66,10 +91,12 @@ class ContractController extends Controller
         $contract->status = 'open';
         $contract->deadline_at = $request->input('deadline');
 
-        $contract->save();
+        DB::transaction(function() use($contract) {
+            $contract->save(); 
+        });
 
 
-        return ['success'=>true, 'message'=>'Contract was created'];
+        return new ContractResource($contract);
 
     }
 
@@ -82,18 +109,9 @@ class ContractController extends Controller
     public function show($id)
     {
         $contract = Contract::findOrFail($id);
-        $request = null;
-        try {
-            $request = ContractRequest::where(['contract_id' => $id, 'freelancer_email' => Auth::user()->email])->firstOrFail();
-        } catch(ModelNotFoundException $e) {} 
+        $request = ContractRequest::where(['contract_id' => $id, 'freelancer_email' => Auth::user()->email])->first();
 
-        if($this->isHirer()) {
-
-            return view('show.hirer_view', ['contract' => $contract, 'request' => $request]);
-
-        }
-
-        return view('show.freelancer_view')->with(['contract' => $contract, 'request' => $request]);
+        return new ContractResource($contract);
         
     }
 
@@ -115,7 +133,7 @@ class ContractController extends Controller
 
         $contract->save();
 
-        return response()->json(['success'=>true, 'message'=>'Contract updated', 'contract' => $contract]);
+        return new ContractResource($contract);
     }
 
     /**
@@ -130,11 +148,11 @@ class ContractController extends Controller
        
         $contract->delete();
         
-        return response()->json(['success' => true, 'message' => 'Contract deleted']);
+        return new ContractResource($contract);
 
     }
 
-    public function browseContracts() {
+    public function browse() {
 
         $contracts = Contract::where('status', 'open')->orderBy('created_at', 'desc')->get();
 
@@ -142,7 +160,7 @@ class ContractController extends Controller
     }
 
 
-    public function enterContract(Request $request, $id) 
+    public function enter(Request $request, $id) 
     {
         $contract = Contract::findOrFail($id);
 
@@ -154,32 +172,13 @@ class ContractController extends Controller
 
         $contract->save();
         
-        return response()->json(['success'=> true, 'message' => 'Contract has been assigned']);
+        return new ContractResource($contract);
    
     }
 
-    public function makePayment(Request $request) {
-        
-        $contract = Contract::findOrFail(decrypt($request->input('contract_id')));
-        $hirer = User::where(['email' => decrypt($request->input('hirer_email'))])->firstOrFail();
-        $freelancer = User::where('email', decrypt($request->input('freelancer_email')))->firstOrFail();
+    public function close($id) {
+        $contract = Contract::findOrFail($id);
 
-        $price = $contract->price;
-
-        if($hirer->balance - $price < 0) {
-            return response()->json(['success' => false,'message' => 'Insufficient funds']);
-        }
-
-        $hirer->balance -= $price;
-        $freelancer->balance += $price;
-        $contract->status = 'closed';
-
-        $contract->save();
-        $hirer->save();
-        $freelancer->save();
-
-
-        return response()->json(['success'=> true, 'message' => 'Payment has been transferred']);
-
+        return $this->transferPayment($contract) ? new ContractResource($contract) : response('Insufficient funds', 403);
     }
 }

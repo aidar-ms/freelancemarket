@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Contract;
 use App\Request as ContractRequest;
 use App\Http\Resources\Contract as ContractResource;
+use App\Http\Resources\Request as RequestResource;
 
 class RequestController extends Controller
 {
@@ -16,81 +18,68 @@ class RequestController extends Controller
         $this->middleware('auth:api');
     }
 
-    public function makeRequest($id) 
-    {
-        $contract = Contract::findOrFail($id);
-
-        $hirerId = $contract->hirer_id;
-        $hirerName = $contract->hirer;
-        $hirerEmail = $contract->hirer_email;
-
-        if(ContractRequest::where(['contract_id'=>$id, 'freelancer_id'=>Auth::user()->id])->count() > 0) 
-            return response()->json(['success'=>false, 'message'=>"You've already requested this contract"]);
-
-
-        $contractRequest = new ContractRequest;
-
-        $contractRequest->contract_id = $id;
-        $contractRequest->hirer_id = $hirerId;    
-        $contractRequest->hirer_name = $hirerName;
-        $contractRequest->hirer_email = $hirerEmail;
-        $contractRequest->freelancer_id = Auth::user()->id;
-        $contractRequest->freelancer_name = Auth::user()->name;
-        $contractRequest->freelancer_email = Auth::user()->email;
+    public function list() {
+        $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();  
         
-        $contractRequest->status = 'sent';
-
-        if($contractRequest->save()) {
-            return response()->json(['success'=>true, 'message'=>'Request has been sent']);
-        }
-
-        abort(500, 'Error occured while making request');
-        
-        
+        return RequestResource::collection($contractRequests);
     }
 
-    public function getRequestList() {
-        
-        $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();
-        
-        
-        return ContractResource::collection($contractRequests);
+    public function send($contractId) 
+    {
+        $contract = Contract::findOrFail($contractId);
+
+        if(ContractRequest::where(['contract_id'=>$contract->id, 'freelancer_id'=>Auth::user()->id])->count() > 0) 
+            return response("Contract already requested", 403);
+
+        $request = new ContractRequest;
+        $request->contract_id = $contract->id;
+        $request->hirer_id = $contract->hirer_id;    
+        $request->hirer_name = $contract->hirer;
+        $request->hirer_email = $contract->hirer_email;
+        $request->freelancer_id = Auth::user()->id;
+        $request->freelancer_name = Auth::user()->name;
+        $request->freelancer_email = Auth::user()->email;
+        $request->status = 'sent';
+
+        DB::transaction(function() use($request) {
+            
+            $request->save();
+
+        });
+            
+
+        return new RequestResource($request);
 
     }
     
-    public function acceptRequest($id)
+    public function accept($id)
     {
         try {
-            $contractRequest = ContractRequest::findOrFail($id);
-            $contractRequest->status = 'accepted';
-            $contractRequest->save();
+            $request = ContractRequest::findOrFail($id); 
         } catch(ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'Request entry could not be found']);
+            return response('Request not found', 404);
         }
+        $request->status = 'accepted';
+        $request->save();
 
-        return response()->json(['success' => true, 'message' => 'Request has been accepted']);     
+        return new RequestResource($request);   
     }
 
-    public function rejectRequest($id)
+    public function reject($id)
     {
         try {
-            $contractRequest = ContractRequest::findOrFail($id); 
-            if($contractRequest->status !== 'sent') {
-                
-                return response()->json(['success'=>false, 'message' => 'Request does not have a mutable status: ' . $contractRequest->status]); 
-            } 
+            $request = ContractRequest::findOrFail($id); 
         } catch(ModelNotFoundException $e) {
-            return response()->json(['success'=>false, 'message' => "Request entry could not be found"]); 
+            return response('Request not found', 404);
         }
-
-        $contractRequest->status = 'rejected';
         
-        $contractRequest->save();
-        return response()->json(['success'=>true, 'message' => 'Request status has been updated: ' . $contractRequest->status]);   
+        if($request->status !== 'sent')
+            return response('Request does not have a mutable status', 403); 
 
-        
-        
+        $request->status = 'rejected';
+        $request->save();
 
+        return new RequestResource($request);
     }
 
 }
