@@ -13889,7 +13889,7 @@ module.exports = Cancel;
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(13);
-module.exports = __webpack_require__(61);
+module.exports = __webpack_require__(64);
 
 
 /***/ }),
@@ -13917,9 +13917,10 @@ Vue.component('post-contract', __webpack_require__(40));
 Vue.component('request-list', __webpack_require__(43));
 Vue.component('make-request', __webpack_require__(46));
 Vue.component('contract-list', __webpack_require__(49));
-Vue.component('freelancer-contract-list', __webpack_require__(52));
-Vue.component('browse-contracts', __webpack_require__(55));
-Vue.component('payment-component', __webpack_require__(58));
+Vue.component('edit-form', __webpack_require__(52));
+Vue.component('freelancer-contract-list', __webpack_require__(55));
+Vue.component('browse-contracts', __webpack_require__(58));
+Vue.component('payment-component', __webpack_require__(61));
 
 var app = new Vue({
   el: '#app'
@@ -47081,7 +47082,6 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
             axios.post('/api/contracts', vm.contract).then(function (response) {
                 console.log(response);
-                alert('Contract successfully posted');
             }).catch(function (error) {
                 console.log(error);
             });
@@ -47337,9 +47337,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     created: function created() {
         var vm = this;
 
-        axios.get('/api/list-requests').then(function (response) {
+        axios.get('/api/requests').then(function (response) {
             console.log(response);
-            vm.requests = response.data.data;
+            vm.requests = response.data;
         }).catch(function (error) {
             console.log(error);
         });
@@ -47349,34 +47349,41 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     methods: {
         acceptRequest: function acceptRequest(request) {
 
-            axios.put('/api/accept-request/' + request.id).then(function (response) {
+            axios.get('/api/requests/' + request.id + '/accept').then(function (response) {
                 console.log(response);
             }).catch(function (error) {
                 //console.log(error);
-                alert('Error at request');
+                if (error.response.status === 403) {
+                    alert('Message from server: ' + error.response.data);
+                }
             });
 
             this.freelancer.id = request.freelancer_id;
             this.freelancer.name = request.freelancer_name;
             this.freelancer.email = request.freelancer_email;
 
-            axios.put('/api/enter-contract/' + request.contract_id, this.freelancer).then(function (response) {
+            axios.put('/api/contracts/' + request.contract_id + '/enter', this.freelancer).then(function (response) {
                 console.log(response);
             }).catch(function (error) {
-                alert('Error at enter-contract');
+                if (error.response.status === 403) {
+                    alert(error.response.data);
+                }
             });
 
-            alert('Request accepted');
+            window.location.reload();
         },
         rejectRequest: function rejectRequest(request) {
 
-            axios.put('/api/reject-request/' + request.id).then(function (response) {
+            axios.get('/api/requests/' + request.id + '/reject').then(function (response) {
                 console.log(response);
-                alert('Request has been rejected');
+                window.location.reload();
             }).catch(function (error) {
-                //console.log(error);
-                alert('Error at reject request');
+                if (error.response.status === 403) {
+                    alert('Message from server: ' + error.response.data);
+                }
             });
+
+            window.location.reload();
         }
     }
 
@@ -47420,6 +47427,7 @@ var render = function() {
               "button",
               {
                 staticClass: "btn btn-warning",
+                attrs: { dusk: "accept-request" },
                 on: {
                   click: function($event) {
                     _vm.acceptRequest(request)
@@ -47433,6 +47441,7 @@ var render = function() {
               "button",
               {
                 staticClass: "btn btn-danger",
+                attrs: { dusk: "reject-request" },
                 on: {
                   click: function($event) {
                     _vm.rejectRequest(request)
@@ -47538,10 +47547,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         return {
             data: {
                 contract_id: ""
+
             }
         };
     },
     mounted: function mounted() {
+        var vm = this;
         this.data.contract_id = this.contractId;
     },
 
@@ -47550,14 +47561,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         onSubmit: function onSubmit() {
             var vm = this;
 
-            axios.get('/api/make-request/' + vm.data.contract_id).then(function (response) {
+            axios.get('api/requests/' + vm.data.contract_id + '/send').then(function (response) {
                 console.log(response);
-                alert('Message from server: ' + response.data.message);
             }).catch(function (error) {
-                console.log(error);
+                console.log(error.response);
+                if (error.response.status === 403) {
+                    alert("Contract was already requested");
+                }
             });
-
-            window.location.reload();
 
             return false;
         }
@@ -47751,11 +47762,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-
     name: 'contract-list',
-
     data: function data() {
         return {
             requests: [],
@@ -47773,25 +47788,21 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     },
     created: function created() {
         var vm = this;
-
         axios.get('/api/contracts').then(function (response) {
             console.log(response);
-            vm.contracts = response.data.data;
+            vm.contracts = response.data;
             console.log(vm.contracts);
         }).catch(function (error) {
             console.log(error);
         });
     },
 
-
     methods: {
         submitEdited: function submitEdited(contract) {
-
             this.contract.title = contract.title;
             this.contract.description = contract.description;
             this.contract.price = contract.price;
             this.contract.deadline_at = contract.deadline_at;
-
             axios.put('/api/contracts/' + contract.id, this.contract).then(function (response) {
                 alert('Contract edited');
                 console.log(response);
@@ -47803,6 +47814,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             axios.delete('/api/contracts/' + contract.id, this.contract).then(function (response) {
                 alert('Contract deleted');
                 console.log(response);
+                window.location.reload();
             }).catch(function (error) {
                 console.log(error);
             });
@@ -47823,19 +47835,57 @@ var render = function() {
     _vm._l(_vm.contracts, function(contract, index) {
       return _c("div", { key: index, staticClass: "card card-body" }, [
         _c("div", { staticClass: "row" }, [
-          _c("div", { staticClass: "col-md-10" }, [
-            _c("h1", { staticClass: "card-title" }, [
-              _c("a", { attrs: { href: "/contracts/" + contract.id } }, [
-                _vm._v(
-                  "\n                        " +
-                    _vm._s(contract.title) +
-                    "\n                    "
-                )
-              ])
-            ]),
-            _vm._v(" "),
-            _c("p", [_vm._v(_vm._s(contract.description))])
-          ]),
+          _c(
+            "div",
+            { staticClass: "col-md-10" },
+            [
+              _c("h2", [_vm._v(" " + _vm._s(contract.title))]),
+              _vm._v(" "),
+              _c(
+                "p",
+                {
+                  directives: [
+                    {
+                      name: "show",
+                      rawName: "v-show",
+                      value: contract.freelancer,
+                      expression: "contract.freelancer"
+                    }
+                  ],
+                  staticClass: "small"
+                },
+                [_vm._v(" Freelancer: " + _vm._s(contract.freelancer))]
+              ),
+              _vm._v(" "),
+              _c("p", { staticClass: "small" }, [
+                _vm._v(" Contract ID: "),
+                _c("span", { staticStyle: { "vertical-align": "top" } }, [
+                  _vm._v(" " + _vm._s(contract.id) + " ")
+                ])
+              ]),
+              _vm._v(" "),
+              _c("p", { staticClass: "small" }, [
+                _vm._v(" Due at: " + _vm._s(contract.deadline_at) + "   ")
+              ]),
+              _vm._v(" "),
+              _c("p", { staticClass: "small" }, [
+                _vm._v(" Price: " + _vm._s(contract.price) + " ")
+              ]),
+              _vm._v(" "),
+              _c("p", { staticClass: "small" }, [
+                _vm._v(" Status: " + _vm._s(contract.status) + " ")
+              ]),
+              _vm._v(" "),
+              _c("br"),
+              _vm._v(" "),
+              _c("p", [_vm._v(" " + _vm._s(contract.description))]),
+              _vm._v(" "),
+              _c("br"),
+              _vm._v(" "),
+              _c("payment-component", { attrs: { contract: contract } })
+            ],
+            1
+          ),
           _vm._v(" "),
           _c("div", { staticClass: "col-md-2" }, [
             _c(
@@ -47844,7 +47894,7 @@ var render = function() {
                 staticClass: "btn btn-warning",
                 attrs: {
                   "data-toggle": "modal",
-                  "data-target": "#editContractModal"
+                  "data-target": "#editForm" + index
                 }
               },
               [_vm._v("\n                    Edit\n                ")]
@@ -47869,7 +47919,7 @@ var render = function() {
               {
                 staticClass: "modal fade",
                 attrs: {
-                  id: "editContractModal",
+                  id: "editForm" + index,
                   tabindex: "-1",
                   role: "dialog",
                   "aria-labelledby": "exampleModalLabel",
@@ -47888,168 +47938,152 @@ var render = function() {
                       _vm._m(0, true),
                       _vm._v(" "),
                       _c("div", { staticClass: "modal-body" }, [
-                        _c(
-                          "form",
-                          { attrs: { method: "put", id: "editContractForm" } },
-                          [
-                            _c(
-                              "label",
-                              {
-                                staticClass: "col-md-6",
-                                attrs: { for: "title" }
-                              },
-                              [_vm._v("Title")]
-                            ),
-                            _vm._v(" "),
-                            _c("input", {
-                              directives: [
-                                {
-                                  name: "model",
-                                  rawName: "v-model",
-                                  value: contract.title,
-                                  expression: "contract.title"
-                                }
-                              ],
+                        _c("form", { attrs: { id: "editContractForm" } }, [
+                          _c(
+                            "label",
+                            {
                               staticClass: "col-md-6",
-                              attrs: {
-                                type: "text",
-                                id: "title",
-                                name: "title"
-                              },
-                              domProps: { value: contract.title },
-                              on: {
-                                input: function($event) {
-                                  if ($event.target.composing) {
-                                    return
-                                  }
-                                  _vm.$set(
-                                    contract,
-                                    "title",
-                                    $event.target.value
-                                  )
-                                }
-                              }
-                            }),
-                            _vm._v(" "),
-                            _c(
-                              "label",
+                              attrs: { for: "title" }
+                            },
+                            [_vm._v("Title")]
+                          ),
+                          _vm._v(" "),
+                          _c("input", {
+                            directives: [
                               {
-                                staticClass: "col-md-6",
-                                attrs: { for: "description" }
-                              },
-                              [_vm._v("Description")]
-                            ),
-                            _vm._v(" "),
-                            _c("textarea", {
-                              directives: [
-                                {
-                                  name: "model",
-                                  rawName: "v-model",
-                                  value: contract.description,
-                                  expression: "contract.description"
-                                }
-                              ],
-                              attrs: {
-                                rows: "10",
-                                cols: "80",
-                                form: "editContractForm",
-                                id: "description",
-                                name: "description"
-                              },
-                              domProps: { value: contract.description },
-                              on: {
-                                input: function($event) {
-                                  if ($event.target.composing) {
-                                    return
-                                  }
-                                  _vm.$set(
-                                    contract,
-                                    "description",
-                                    $event.target.value
-                                  )
-                                }
+                                name: "model",
+                                rawName: "v-model",
+                                value: contract.title,
+                                expression: "contract.title"
                               }
-                            }),
-                            _vm._v(" "),
-                            _c(
-                              "label",
-                              {
-                                staticClass: "col-md-6",
-                                attrs: { for: "price" }
-                              },
-                              [_vm._v("Price")]
-                            ),
-                            _vm._v(" "),
-                            _c("input", {
-                              directives: [
-                                {
-                                  name: "model",
-                                  rawName: "v-model",
-                                  value: contract.price,
-                                  expression: "contract.price"
+                            ],
+                            staticClass: "col-md-6",
+                            attrs: { type: "text", id: "title", name: "title" },
+                            domProps: { value: contract.title },
+                            on: {
+                              input: function($event) {
+                                if ($event.target.composing) {
+                                  return
                                 }
-                              ],
+                                _vm.$set(contract, "title", $event.target.value)
+                              }
+                            }
+                          }),
+                          _vm._v(" "),
+                          _c(
+                            "label",
+                            {
                               staticClass: "col-md-6",
-                              attrs: {
-                                type: "number",
-                                id: "price",
-                                name: "price"
-                              },
-                              domProps: { value: contract.price },
-                              on: {
-                                input: function($event) {
-                                  if ($event.target.composing) {
-                                    return
-                                  }
-                                  _vm.$set(
-                                    contract,
-                                    "price",
-                                    $event.target.value
-                                  )
-                                }
-                              }
-                            }),
-                            _vm._v(" "),
-                            _c(
-                              "label",
+                              attrs: { for: "description" }
+                            },
+                            [_vm._v("Description")]
+                          ),
+                          _vm._v(" "),
+                          _c("textarea", {
+                            directives: [
                               {
-                                staticClass: "col-md-6",
-                                attrs: { for: "deadline" }
-                              },
-                              [_vm._v("Deadline")]
-                            ),
-                            _vm._v(" "),
-                            _c("input", {
-                              directives: [
-                                {
-                                  name: "model",
-                                  rawName: "v-model",
-                                  value: contract.deadline_at,
-                                  expression: "contract.deadline_at"
-                                }
-                              ],
-                              staticClass: "col-md-6",
-                              attrs: {
-                                type: "datetime-local",
-                                id: "deadline",
-                                name: "deadline"
-                              },
-                              domProps: { value: contract.deadline_at },
-                              on: {
-                                input: function($event) {
-                                  if ($event.target.composing) {
-                                    return
-                                  }
-                                  _vm.$set(
-                                    contract,
-                                    "deadline_at",
-                                    $event.target.value
-                                  )
-                                }
+                                name: "model",
+                                rawName: "v-model",
+                                value: contract.description,
+                                expression: "contract.description"
                               }
-                            })
-                          ]
-                        )
+                            ],
+                            attrs: {
+                              rows: "10",
+                              cols: "80",
+                              form: "editContractForm",
+                              id: "description",
+                              name: "description"
+                            },
+                            domProps: { value: contract.description },
+                            on: {
+                              input: function($event) {
+                                if ($event.target.composing) {
+                                  return
+                                }
+                                _vm.$set(
+                                  contract,
+                                  "description",
+                                  $event.target.value
+                                )
+                              }
+                            }
+                          }),
+                          _vm._v(" "),
+                          _c(
+                            "label",
+                            {
+                              staticClass: "col-md-6",
+                              attrs: { for: "price" }
+                            },
+                            [_vm._v("Price")]
+                          ),
+                          _vm._v(" "),
+                          _c("input", {
+                            directives: [
+                              {
+                                name: "model",
+                                rawName: "v-model",
+                                value: contract.price,
+                                expression: "contract.price"
+                              }
+                            ],
+                            staticClass: "col-md-6",
+                            attrs: {
+                              type: "number",
+                              id: "price",
+                              name: "price"
+                            },
+                            domProps: { value: contract.price },
+                            on: {
+                              input: function($event) {
+                                if ($event.target.composing) {
+                                  return
+                                }
+                                _vm.$set(contract, "price", $event.target.value)
+                              }
+                            }
+                          }),
+                          _vm._v(" "),
+                          _c(
+                            "label",
+                            {
+                              staticClass: "col-md-6",
+                              attrs: { for: "deadline" }
+                            },
+                            [_vm._v("Deadline")]
+                          ),
+                          _vm._v(" "),
+                          _c("input", {
+                            directives: [
+                              {
+                                name: "model",
+                                rawName: "v-model",
+                                value: contract.deadline_at,
+                                expression: "contract.deadline_at"
+                              }
+                            ],
+                            staticClass: "col-md-6",
+                            attrs: {
+                              type: "datetime-local",
+                              id: "deadline",
+                              name: "deadline"
+                            },
+                            domProps: { value: contract.deadline_at },
+                            on: {
+                              input: function($event) {
+                                if ($event.target.composing) {
+                                  return
+                                }
+                                _vm.$set(
+                                  contract,
+                                  "deadline_at",
+                                  $event.target.value
+                                )
+                              }
+                            }
+                          })
+                        ])
                       ]),
                       _vm._v(" "),
                       _c("div", { staticClass: "modal-footer" }, [
@@ -48149,7 +48183,7 @@ var Component = normalizeComponent(
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "resources/assets/js/components/FreelancerContractList.vue"
+Component.options.__file = "resources/assets/js/components/EditForm.vue"
 
 /* hot reload */
 if (false) {(function () {
@@ -48158,9 +48192,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-588ca92c", Component.options)
+    hotAPI.createRecord("data-v-c5aea7b6", Component.options)
   } else {
-    hotAPI.reload("data-v-588ca92c", Component.options)
+    hotAPI.reload("data-v-c5aea7b6", Component.options)
   }
   module.hot.dispose(function (data) {
     disposed = true
@@ -48199,36 +48233,73 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
 
-    name: 'freelancer-contract-list',
+    props: ['contract'],
 
     data: function data() {
         return {
-            requests: [],
-            contracts: [],
-            contract: {
+            contract2Send: {
                 title: '',
                 description: '',
                 price: '',
                 deadline_at: ''
             }
+
         };
     },
     mounted: function mounted() {
-        console.log('Component mounted.');
+        console.log('Component mounted');
     },
-    created: function created() {
-        var vm = this;
 
-        axios.get('/api/contracts').then(function (response) {
-            console.log(response);
-            vm.contracts = response.data.data;
-            console.log(vm.contracts);
-        }).catch(function (error) {
-            console.log(error);
-        });
+
+    methods: {
+        submitEdited: function submitEdited(contract) {
+
+            this.contract2Send.title = contract.title;
+            this.contract2Send.description = contract.description;
+            this.contract2Send.price = contract.price;
+            this.contract2Send.deadline_at = contract.deadline_at;
+
+            axios.put('/api/contracts/' + contract.id, this.contract2Send).then(function (response) {
+                console.log(response);
+            }).catch(function (error) {
+                console.log(error);
+            });
+        },
+        deleteContract: function deleteContract(contract) {
+            axios.delete('/api/contracts/' + contract.id, this.contract).then(function (response) {
+                alert('Contract deleted');
+                console.log(response);
+            }).catch(function (error) {
+                console.log(error);
+            });
+        }
     }
 });
 
@@ -48240,36 +48311,218 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c(
-    "div",
-    _vm._l(_vm.contracts, function(contract, index) {
-      return _c("div", { key: index, staticClass: "card card-body" }, [
-        _c("div", { staticClass: "row" }, [
-          _c("div", { staticClass: "col-md-10" }, [
-            _c("h1", { staticClass: "card-title" }, [
-              _c("a", { attrs: { href: "/contracts/" + contract.id } }, [
-                _vm._v(
-                  "\n                        " +
-                    _vm._s(contract.title) +
-                    "\n                    "
+  return _c("div", { staticClass: "container" }, [
+    _c(
+      "div",
+      {
+        staticClass: "modal fade",
+        attrs: { abindex: "-1", role: "dialog", "aria-hidden": "true" }
+      },
+      [
+        _c(
+          "div",
+          { staticClass: "modal-dialog modal-lg", attrs: { role: "document" } },
+          [
+            _c("div", { staticClass: "modal-content" }, [
+              _vm._m(0),
+              _vm._v(" "),
+              _c("div", { staticClass: "modal-body" }, [
+                _c("form", { attrs: { id: "editContractForm" } }, [
+                  _c(
+                    "label",
+                    { staticClass: "col-md-6", attrs: { for: "title" } },
+                    [_vm._v("Title")]
+                  ),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.contract.title,
+                        expression: "contract.title"
+                      }
+                    ],
+                    staticClass: "col-md-6",
+                    attrs: { type: "text", id: "title", name: "title" },
+                    domProps: { value: _vm.contract.title },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.$set(_vm.contract, "title", $event.target.value)
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c(
+                    "label",
+                    { staticClass: "col-md-6", attrs: { for: "description" } },
+                    [_vm._v("Description")]
+                  ),
+                  _vm._v(" "),
+                  _c("textarea", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.contract.description,
+                        expression: "contract.description"
+                      }
+                    ],
+                    attrs: {
+                      rows: "10",
+                      cols: "80",
+                      form: "editContractForm",
+                      id: "description",
+                      name: "description"
+                    },
+                    domProps: { value: _vm.contract.description },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.$set(
+                          _vm.contract,
+                          "description",
+                          $event.target.value
+                        )
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c(
+                    "label",
+                    { staticClass: "col-md-6", attrs: { for: "price" } },
+                    [_vm._v("Price")]
+                  ),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.contract.price,
+                        expression: "contract.price"
+                      }
+                    ],
+                    staticClass: "col-md-6",
+                    attrs: { type: "number", id: "price", name: "price" },
+                    domProps: { value: _vm.contract.price },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.$set(_vm.contract, "price", $event.target.value)
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c(
+                    "label",
+                    { staticClass: "col-md-6", attrs: { for: "deadline" } },
+                    [_vm._v("Deadline")]
+                  ),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.contract.deadline_at,
+                        expression: "contract.deadline_at"
+                      }
+                    ],
+                    staticClass: "col-md-6",
+                    attrs: {
+                      type: "datetime-local",
+                      id: "deadline",
+                      name: "deadline"
+                    },
+                    domProps: { value: _vm.contract.deadline_at },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.$set(
+                          _vm.contract,
+                          "deadline_at",
+                          $event.target.value
+                        )
+                      }
+                    }
+                  })
+                ])
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "modal-footer" }, [
+                _c(
+                  "button",
+                  {
+                    staticClass: "btn btn-secondary",
+                    attrs: { type: "button", "data-dismiss": "modal" }
+                  },
+                  [_vm._v("Close")]
+                ),
+                _vm._v(" "),
+                _c(
+                  "button",
+                  {
+                    staticClass: "btn btn-primary",
+                    attrs: { type: "submit", name: "submit" },
+                    on: {
+                      click: function($event) {
+                        _vm.submitEdited(_vm.contract)
+                      }
+                    }
+                  },
+                  [_vm._v("Save")]
                 )
               ])
-            ]),
-            _vm._v(" "),
-            _c("p", [_vm._v(_vm._s(contract.description))])
-          ])
-        ])
-      ])
-    })
-  )
+            ])
+          ]
+        )
+      ]
+    )
+  ])
 }
-var staticRenderFns = []
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("div", { staticClass: "modal-header" }, [
+      _c(
+        "h5",
+        { staticClass: "modal-title", attrs: { id: "exampleModalLabel" } },
+        [_vm._v("Edit contract")]
+      ),
+      _vm._v(" "),
+      _c(
+        "button",
+        {
+          staticClass: "close",
+          attrs: {
+            type: "button",
+            "data-dismiss": "modal",
+            "aria-label": "Close"
+          }
+        },
+        [_c("span", { attrs: { "aria-hidden": "true" } }, [_vm._v("×")])]
+      )
+    ])
+  }
+]
 render._withStripped = true
 module.exports = { render: render, staticRenderFns: staticRenderFns }
 if (false) {
   module.hot.accept()
   if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-588ca92c", module.exports)
+    require("vue-hot-reload-api")      .rerender("data-v-c5aea7b6", module.exports)
   }
 }
 
@@ -48299,7 +48552,7 @@ var Component = normalizeComponent(
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "resources/assets/js/components/BrowseContracts.vue"
+Component.options.__file = "resources/assets/js/components/FreelancerContractList.vue"
 
 /* hot reload */
 if (false) {(function () {
@@ -48308,9 +48561,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-67205dd0", Component.options)
+    hotAPI.createRecord("data-v-588ca92c", Component.options)
   } else {
-    hotAPI.reload("data-v-67205dd0", Component.options)
+    hotAPI.reload("data-v-588ca92c", Component.options)
   }
   module.hot.dispose(function (data) {
     disposed = true
@@ -48372,10 +48625,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     created: function created() {
         var vm = this;
 
-        axios.get('/api/browse').then(function (response) {
+        axios.get('/api/contracts').then(function (response) {
             console.log(response);
-            vm.contracts = response.data.data;
-            console.log(vm.contracts);
+            vm.contracts = response.data;
         }).catch(function (error) {
             console.log(error);
         });
@@ -48396,18 +48648,198 @@ var render = function() {
       return _c("div", { key: index, staticClass: "card card-body" }, [
         _c("div", { staticClass: "row" }, [
           _c("div", { staticClass: "col-md-10" }, [
-            _c("h1", { staticClass: "card-title" }, [
-              _c("a", { attrs: { href: "/contracts/" + contract.id } }, [
-                _vm._v(
-                  "\n                        " +
-                    _vm._s(contract.title) +
-                    "\n                    "
-                )
+            _c("h2", [_vm._v(" " + _vm._s(contract.title) + " ")]),
+            _vm._v(" "),
+            _c("p", { staticClass: "small" }, [
+              _vm._v(" Contract ID: "),
+              _c("span", { staticStyle: { "vertical-align": "top" } }, [
+                _vm._v(" " + _vm._s(contract.id) + " ")
               ])
             ]),
             _vm._v(" "),
-            _c("p", [_vm._v(_vm._s(contract.description))])
+            _c("p", { staticClass: "small" }, [
+              _vm._v(" Due at: " + _vm._s(contract.deadline_at) + "   ")
+            ]),
+            _vm._v(" "),
+            _c("p", { staticClass: "small" }, [
+              _vm._v(" Price: " + _vm._s(contract.price) + " ")
+            ]),
+            _vm._v(" "),
+            _c("br"),
+            _vm._v(" "),
+            _c("p", [_vm._v(" " + _vm._s(contract.description) + " ")])
           ])
+        ])
+      ])
+    })
+  )
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-588ca92c", module.exports)
+  }
+}
+
+/***/ }),
+/* 58 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(1)
+/* script */
+var __vue_script__ = __webpack_require__(59)
+/* template */
+var __vue_template__ = __webpack_require__(60)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources/assets/js/components/BrowseContracts.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-67205dd0", Component.options)
+  } else {
+    hotAPI.reload("data-v-67205dd0", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 59 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+
+    name: 'freelancer-contract-list',
+
+    data: function data() {
+        return {
+            requests: [],
+            contracts: [],
+            contract: {
+                title: '',
+                description: '',
+                price: '',
+                deadline_at: ''
+            }
+        };
+    },
+    mounted: function mounted() {
+        console.log('Component mounted.');
+    },
+    created: function created() {
+        var vm = this;
+
+        axios.get('/api/browse').then(function (response) {
+            console.log(response);
+            vm.contracts = response.data;
+        }).catch(function (error) {
+            console.log(error);
+        });
+    }
+});
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "div",
+    _vm._l(_vm.contracts, function(contract, index) {
+      return _c("div", { key: index, staticClass: "card card-body" }, [
+        _c("div", { staticClass: "row" }, [
+          _c("div", { staticClass: "col-md-10" }, [
+            _c("h2", [_vm._v(" " + _vm._s(contract.title) + " ")]),
+            _vm._v(" "),
+            _c("p", { staticClass: "small" }, [
+              _vm._v(" Contract ID: "),
+              _c("span", { staticStyle: { "vertical-align": "top" } }, [
+                _vm._v(" " + _vm._s(contract.id) + " ")
+              ])
+            ]),
+            _vm._v(" "),
+            _c("p", { staticClass: "small" }, [
+              _vm._v(" Due at: " + _vm._s(contract.deadline_at) + "   ")
+            ]),
+            _vm._v(" "),
+            _c("p", { staticClass: "small" }, [
+              _vm._v(" Price: " + _vm._s(contract.price) + " ")
+            ]),
+            _vm._v(" "),
+            _c("br"),
+            _vm._v(" "),
+            _c("p", [_vm._v(" " + _vm._s(contract.description) + " ")])
+          ]),
+          _vm._v(" "),
+          _c(
+            "div",
+            { staticClass: "col-md-2" },
+            [_c("make-request", { attrs: { "contract-id": contract.id } })],
+            1
+          )
         ])
       ])
     })
@@ -48424,15 +48856,15 @@ if (false) {
 }
 
 /***/ }),
-/* 58 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(1)
 /* script */
-var __vue_script__ = __webpack_require__(59)
+var __vue_script__ = __webpack_require__(62)
 /* template */
-var __vue_template__ = __webpack_require__(60)
+var __vue_template__ = __webpack_require__(63)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -48471,7 +48903,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 59 */
+/* 62 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -48484,51 +48916,45 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
-//
-//
-//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
 
-    props: ['contractId', 'hirerEmail', 'freelancerEmail'],
+    props: ['contract'],
 
-    data: function data() {
-        return {
-            data: {
-                contract_id: "",
-                hirer_email: "",
-                freelancer_email: ""
-            }
-        };
-    },
-    mounted: function mounted() {
-        this.data.contract_id = this.contractId;
-        this.data.hirer_email = this.hirerEmail;
-        this.data.freelancer_email = this.freelancerEmail;
-    },
-
+    /*   data() {
+           return  {
+               data : {
+                   contract_id : "",
+                   hirer_email : "",
+                   freelancer_email : "",
+               }
+           }
+       },
+    
+       mounted() {
+           this.data.contract_id = this.contractId;
+           this.data.hirer_email = this.hirerEmail;
+           this.data.freelancer_email = this.freelancerEmail;
+       }, */
 
     methods: {
         onSubmit: function onSubmit() {
             var vm = this;
 
-            axios.post('/api/make-payment', vm.data).then(function (response) {
+            axios.get('/api/contracts/' + vm.contract.id + '/close').then(function (response) {
                 console.log(response);
-                alert('Message from server: ' + response.data.message);
             }).catch(function (error) {
-                console.log(error);
+                if (error.response.status === 403) {
+                    alert(error.response.data);
+                }
             });
-
-            window.location.reload();
-
-            return false;
         }
     }
 });
 
 /***/ }),
-/* 60 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -48538,6 +48964,14 @@ var render = function() {
   return _c(
     "form",
     {
+      directives: [
+        {
+          name: "show",
+          rawName: "v-show",
+          value: _vm.contract.status === "active",
+          expression: "contract.status === 'active' "
+        }
+      ],
       attrs: { method: "post" },
       on: {
         submit: function($event) {
@@ -48547,69 +48981,6 @@ var render = function() {
       }
     },
     [
-      _c("input", {
-        directives: [
-          {
-            name: "model",
-            rawName: "v-model",
-            value: _vm.data.contract_id,
-            expression: "data.contract_id"
-          }
-        ],
-        attrs: { type: "hidden" },
-        domProps: { value: _vm.data.contract_id },
-        on: {
-          input: function($event) {
-            if ($event.target.composing) {
-              return
-            }
-            _vm.$set(_vm.data, "contract_id", $event.target.value)
-          }
-        }
-      }),
-      _vm._v(" "),
-      _c("input", {
-        directives: [
-          {
-            name: "model",
-            rawName: "v-model",
-            value: _vm.data.hirer_email,
-            expression: "data.hirer_email"
-          }
-        ],
-        attrs: { type: "hidden" },
-        domProps: { value: _vm.data.hirer_email },
-        on: {
-          input: function($event) {
-            if ($event.target.composing) {
-              return
-            }
-            _vm.$set(_vm.data, "hirer_email", $event.target.value)
-          }
-        }
-      }),
-      _vm._v(" "),
-      _c("input", {
-        directives: [
-          {
-            name: "model",
-            rawName: "v-model",
-            value: _vm.data.freelancer_email,
-            expression: "data.freelancer_email"
-          }
-        ],
-        attrs: { type: "hidden" },
-        domProps: { value: _vm.data.freelancer_email },
-        on: {
-          input: function($event) {
-            if ($event.target.composing) {
-              return
-            }
-            _vm.$set(_vm.data, "freelancer_email", $event.target.value)
-          }
-        }
-      }),
-      _vm._v(" "),
       _c("input", {
         staticClass: "btn btn-default",
         attrs: { type: "submit", value: "Pay" }
@@ -48628,7 +48999,7 @@ if (false) {
 }
 
 /***/ }),
-/* 61 */
+/* 64 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
