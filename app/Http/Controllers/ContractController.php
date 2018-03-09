@@ -19,16 +19,21 @@ use Carbon\Carbon;
 
 class ContractController extends Controller
 {
-
     public function __construct() {
         $this->middleware('auth:api');
         $this->middleware('is.hirer', ['only' => ['store', 'update', 'destroy', 'enter', 'close']]);
     }
 
+    /*  
+    LOCAL UTILITES 
+    */
+
+    /* Check if a user is hirer */
     private function isHirer() {
         return Auth::user()->role==='hirer' ? true : false;
     }
 
+    /* Transfer payment */
     protected function transferPayment($contract) {
         
         if(!is_a($contract, 'App\Contract')) return false;
@@ -101,21 +106,6 @@ class ContractController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        $contract = Contract::findOrFail($id);
-        $request = ContractRequest::where(['contract_id' => $id, 'freelancer_email' => Auth::user()->email])->first();
-
-        return new ContractResource($contract);
-        
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -152,6 +142,11 @@ class ContractController extends Controller
 
     }
 
+    /**
+     * Browse open contracts (for freelancers only).
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function browse() {
 
         $contracts = Contract::where('status', 'open')->orderBy('created_at', 'desc')->get();
@@ -160,9 +155,19 @@ class ContractController extends Controller
     }
 
 
+    /**
+     * Enter into a contract.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function enter(Request $request, $id) 
     {
-        $contract = Contract::findOrFail($id);
+        try {
+            $contract = Contract::where(['status'=>'open', 'id' => $id])->firstOrFail();
+        } catch(ModelNotFoundException $e) {
+            abort(403, 'Contract is not open or does not exist');
+        }
+        
 
         $contract->freelancer_id = $request->input('id');
         $contract->freelancer = $request->input('name');
@@ -176,6 +181,11 @@ class ContractController extends Controller
    
     }
 
+    /**
+     * Close a contract and pay a freelancer
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function close($id) {
         $contract = Contract::findOrFail($id);
 

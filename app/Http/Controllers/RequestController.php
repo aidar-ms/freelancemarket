@@ -18,12 +18,22 @@ class RequestController extends Controller
         $this->middleware('auth:api');
     }
 
+    /**
+     * List all active requests
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function list() {
         $contractRequests = ContractRequest::where(['hirer_email' => Auth::user()->email, 'status' => 'sent'])->orderBy('created_at', 'desc')->get();  
         
         return RequestResource::collection($contractRequests);
     }
 
+    /**
+     * Send a new request
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function send($contractId) 
     {
         $contract = Contract::findOrFail($contractId);
@@ -52,12 +62,17 @@ class RequestController extends Controller
 
     }
     
+    /**
+     * Accept a request
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function accept($id)
     {
         try {
-            $request = ContractRequest::findOrFail($id); 
+            $request = ContractRequest::where(['status'=>'sent', 'id' => $id])->firstOrFail(); 
         } catch(ModelNotFoundException $e) {
-            return response('Request not found', 404);
+            return response('Request status is not mutable', 403);
         }
         $request->status = 'accepted';
         $request->save();
@@ -65,16 +80,18 @@ class RequestController extends Controller
         return new RequestResource($request);   
     }
 
+    /**
+     * Reject a request
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function reject($id)
     {
         try {
-            $request = ContractRequest::findOrFail($id); 
+            $request = ContractRequest::where(['status'=>'sent', 'id' => $id])->firstOrFail(); 
         } catch(ModelNotFoundException $e) {
-            return response('Request not found', 404);
+            return response('Request status is not mutable', 403);
         }
-        
-        if($request->status !== 'sent')
-            return response('Request does not have a mutable status', 403); 
 
         $request->status = 'rejected';
         $request->save();
