@@ -20,9 +20,11 @@ Vue.component('post-contract', require('./components/PostContractComponent.vue')
 Vue.component('request-list', require('./components/RequestListComponent.vue'));
 Vue.component('make-request', require('./components/MakeRequest.vue'));
 Vue.component('contract-list', require('./components/ContractListComponent.vue'));
+Vue.component('edit-form', require('./components/EditForm.vue'));
 Vue.component('freelancer-contract-list', require('./components/FreelancerContractList.vue'));
 Vue.component('browse-contracts', require('./components/BrowseContracts.vue'));
 Vue.component('payment-component', require('./components/PaymentComponent.vue'));
+
 
 
 const app = new Vue({

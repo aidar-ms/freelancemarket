@@ -21,10 +21,10 @@
 
                     </form>
 
-                    <button class="btn btn-warning" v-on:click="acceptRequest(request)">
+                    <button dusk="accept-request" class="btn btn-warning" v-on:click="acceptRequest(request)">
                         Accept
                     </button>
-                    <button class="btn btn-danger" v-on:click="rejectRequest(request)">
+                    <button dusk="reject-request" class="btn btn-danger" v-on:click="rejectRequest(request)">
                         Reject
                     </button>
 
@@ -52,7 +52,7 @@
         created() {
             var vm = this;
 
-            axios.get('/api/list-requests')
+            axios.get('/api/requests')
                     .then(function(response) {
                         console.log(response);
                         vm.requests = response.data;
@@ -67,44 +67,50 @@
 
             acceptRequest(request) {
 
-                axios.put('/api/accept-request/'+request.id)
+                axios.get('/api/requests/'+request.id+'/accept')
                     .then(function(response) {
                         console.log(response);
                     })
                     .catch(function(error) {
                         //console.log(error);
-                        alert('Error at request');
+                        if(error.response.status === 403) {
+                            alert('Message from server: ' + error.response.data);
+                        }
                     });
                 
                 this.freelancer.id = request.freelancer_id;
                 this.freelancer.name = request.freelancer_name;
                 this.freelancer.email = request.freelancer_email;
 
-                axios.put('/api/enter-contract/' + request.contract_id, this.freelancer)
+                axios.put('/api/contracts/' + request.contract_id + '/enter', this.freelancer)
                     .then(function(response) {
-                        alert('Message from server: ' + response.data.message);
+                        console.log(response);
                     })
                     .catch(function(error) {
-                        alert('Error at enter-contract')
+                        if(error.response.status === 403) {
+                            alert(error.response.data)
+
+                        }
                     })
 
-                window.location.reload();
+               window.location.reload();
 
             },
 
             rejectRequest(request) {
 
-                axios.put('/api/reject-request/'+request.id)
+                axios.get('/api/requests/'+request.id+'/reject')
                     .then(function(response) {
-                        alert('Message from server: ' + response.data.message);
+                        console.log(response);
                         window.location.reload();
                     })
                     .catch(function(error) {
-                        //console.log(error);
-                        alert('Error at reject request');
+                         if(error.response.status === 403) {
+                            alert('Message from server: ' + error.response.data);
+                        }
                     });
                     
-                window.location.reload();
+               window.location.reload();
             }
 
         }

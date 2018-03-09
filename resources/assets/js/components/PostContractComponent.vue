@@ -42,7 +42,6 @@
                     .post('/api/contracts', vm.contract)
                     .then(function(response) {
                         console.log(response);
-                        alert('Contract successfully posted');
                     })
                     .catch(function (error) {
                         console.log(error);

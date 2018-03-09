@@ -5,13 +5,13 @@
         <div class="card card-body" v-for="(contract, index) in contracts" v-bind:key="index">
             <div class="row">
                 <div class="col-md-10">
-                    <h1 class="card-title">
-                        <a :href="'/contracts/'+contract.id">
-                            {{contract.title}}
-                        </a>
-                    </h1>
-                    
-                    <p>{{contract.description}}</p>
+                    <h2> {{ contract.title }} </h2>
+    
+                    <p class="small"> Contract ID: <span style="vertical-align: top"> {{contract.id}} </span> </p>
+                    <p class="small"> Due at: {{contract.deadline_at}}   </p>
+                    <p class="small"> Price: {{contract.price}} </p>
+                    <br>
+                    <p> {{ contract.description }} </p>
                 </div>
 
             </div>
@@ -50,7 +50,6 @@
                 .then(function(response) {
                     console.log(response);
                     vm.contracts = response.data;
-                    console.log(vm.contracts);
                 })
                 .catch(function (error) {
                     console.log(error);

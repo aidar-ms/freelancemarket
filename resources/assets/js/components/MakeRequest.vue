@@ -17,13 +17,17 @@
             return  {
                 data : {
                     contract_id : "",
+
                 }
             }
         },
 
 
         mounted() {
+            var vm = this;
             this.data.contract_id = this.contractId;
+
+        
         },
 
         methods: {
@@ -32,16 +36,18 @@
                 var vm = this;
 
                 axios
-                    .get('/api/make-request/' + vm.data.contract_id)
+                    .get('api/requests/'+ vm.data.contract_id +'/send')
                     .then(function(response) {
                         console.log(response);
-                        alert('Message from server: ' + response.data.message);
                     })
                     .catch(function (error) {
-                        console.log(error);
-                    });
+                        console.log(error.response);
+                        if(error.response.status === 403) {
+                            alert("Contract was already requested");
 
-                    window.location.reload();
+                        }
+                    });
+        
 
                 return false;
             }
