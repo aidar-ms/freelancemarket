@@ -16,9 +16,7 @@ Route::get('/', function () {
 });
 
 Route::get('/home', 'UserController@index')->name('home');
-
-//Route::view('/contract-page/{id}', 'contract-page');
-//Route::post('/make-payment', 'UserController@makePayment');
+Route::view('/browse', 'freelancer.browse');
 
 
 Auth::routes();
