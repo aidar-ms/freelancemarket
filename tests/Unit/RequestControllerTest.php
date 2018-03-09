@@ -8,6 +8,10 @@ use App\Contract;
 use Tests\TestCase;
 
 
+use App\Exceptions\Handler;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+
+
 class RequestControllerTest extends TestCase {
 
     public function getOpenContract() {
@@ -33,14 +37,14 @@ class RequestControllerTest extends TestCase {
 
     public function getNonRequestedHirer() {
 
-        $requestedHirerIds = Request::select('hirer_id')->where('status', 'sent')->get();
+        $requestedHirerIds = Request::select('hirer_id')->get();
 
 
         $callBack = function($user) use($requestedHirerIds) {
             return $requestedHirerIds->contains($user->id);
         };
 
-        $nonRequestedHirer = User::where('role', 'hirer')->inRandomOrder()->get()->reject($callBack)->first();
+        $nonRequestedHirer = User::where('role', 'hirer')->get()->diff($requestedHirerIds)->first();
         return $nonRequestedHirer;
 
     }
@@ -52,82 +56,84 @@ class RequestControllerTest extends TestCase {
         $this->assertGreaterThan(0, Request::count());
     }
 
-    public function testGetRequestListIfManyRequests() {
+    public function testListIfManyRequests() {
         
         $hirer = $this->getRequestedHirer();
 
-        $allRequestsForThisHirer = Request::where('hirer_id', $hirer->id)->count();
+        $allRequestsForThisHirer = Request::where(['hirer_id' => $hirer->id, 'status' => 'sent'])->count();
 
-        $this->actingAs($hirer, 'api')->call('get', 'api/list-requests')->assertStatus(200)->assertJsonCount($allRequestsForThisHirer);
+        $this->actingAs($hirer, 'api')->call('get', 'api/requests')->assertStatus(200)->assertJsonCount($allRequestsForThisHirer);
     }
 
-    public function testGetRequestListIfNoRequests() {
+    public function testListIfNoRequests() {
         
         $hirer = $this->getNonRequestedHirer();
 
-        $this->actingAs($hirer, 'api')->call('get', 'api/list-requests')->assertStatus(200)->assertJsonCount(0);
+        $response = $this->actingAs($hirer, 'api')->call('get', 'api/requests');
+
+        $response->assertStatus(200)->assertJsonCount(0);
 
     }
 
-    public function testMakeRequest() {
+    public function testSend() {
 
         $contract = $this->getOpenContract();
         $freelancer = $this->getAnyFreelancer();
 
-        $this->actingAs($freelancer, 'api')->call('get', 'api/make-request/' . $contract->id )->assertStatus(200)->assertJson(['success'=>true]);
+        $this->actingAs($freelancer, 'api')->call('get', 'api/requests/' . $contract->id . '/send' )->assertStatus(201);
 
         $this->assertDatabaseHas('requests', ['contract_id' => $contract->id, 'freelancer_id' => $freelancer->id, 'hirer_id' => $contract->hirer_id]);       
 
     }
 
-    public function testMakeRequestIfRequestHasBeenMade() {
+    public function testSendIfRequestHasBeenMade() {
        
         $request = Request::inRandomOrder()->firstOrFail();
         $contract = Contract::where('id', $request->contract_id)->firstOrFail();
         $freelancer = User::where(['role'=>'freelancer', 'id'=>$request->freelancer_id])->firstOrFail();
 
-        $this->actingAs($freelancer, 'api')->call('get', 'api/make-request/' . $contract->id )->assertStatus(200)->assertJson(['success'=>false]);
+        $this->actingAs($freelancer, 'api')->call('get', 'api/requests/' . $contract->id . '/send' )->assertStatus(403);
     }
 
-    public function testAcceptRequest() {
+    public function testAccept() {
 
         $request = Request::where('status', 'sent')->inRandomOrder()->first();
         $hirer = User::where('id', $request->hirer_id)->first();
         $freelancer = User::where('id', $request->freelancer_id)->first();
 
-        $this->actingAs($hirer, 'api')->call('put', 'api/accept-request/' . $request->id)->assertStatus(200)->assertJson(['success'=>true]);
+        $this->actingAs($hirer, 'api')->call('get', 'api/requests/' . $request->id . '/accept')->assertStatus(200);
         $this->assertDatabaseHas('requests', ['id'=>$request->id, 'hirer_id'=>$hirer->id, 'freelancer_id'=>$freelancer->id, 'status' => 'accepted']);
 
     }
 
-    public function testAcceptNonExistingRequest() {
+    public function testAcceptNonExisting() {
 
         $nullRequestId = rand(100, 1000);
 
         $hirer = User::where('role', 'hirer')->inRandomOrder()->first();
 
-        $this->actingAs($hirer, 'api')->call('put', 'api/accept-request/' . $nullRequestId)->assertStatus(200)->assertJson(['success'=>false]);
+        $this->actingAs($hirer, 'api')->call('get', 'api/requests/' . $nullRequestId . '/accept')->assertStatus(403);
     }
 
-    public function testRejectRequest() {
+    public function testReject() {
         $request = Request::where('status', 'sent')->inRandomOrder()->first();
         $hirer = User::where('id', $request->hirer_id)->first();
         $freelancer = User::where('id', $request->freelancer_id)->first();
 
-        if($this->actingAs($hirer, 'api')->call('put', 'api/reject-request/' . $request->id)->assertStatus(200)->assertJson(['success'=>true])) {
+        if($this->actingAs($hirer, 'api')->call('get', 'api/requests/' . $request->id . '/reject')->assertStatus(200)) {
             $this->assertDatabaseHas('requests', ['id'=>$request->id, 'hirer_id'=>$hirer->id, 'freelancer_id'=>$freelancer->id, 'status' => 'rejected']);
         }
         
 
     }
 
-    public function testRejectNonExistingRequest() {
+    public function testRejectNonExisting() {
 
         $nullRequestId = rand(100, 1000);
         
         $hirer = User::where('role', 'hirer')->inRandomOrder()->first();
 
-        $this->actingAs($hirer, 'api')->call('put', 'api/reject-request/' . $nullRequestId)->assertStatus(200)->assertJson(['success'=>false, 'message' => 'Request entry could not be found']);
+        $this->actingAs($hirer, 'api')->call('get', 'api/requests/' . $nullRequestId . '/reject')->assertStatus(403);
 
     }
 
@@ -137,7 +143,7 @@ class RequestControllerTest extends TestCase {
 
         $hirer = User::where('id', $request->hirer_id)->first();
 
-        $this->actingAs($hirer, 'api')->call('put', 'api/reject-request/' . $request->id)->assertStatus(200)->assertJson(['success'=>false, 'message' => 'Request does not have a mutable status: ' . $request->status]);
+        $this->actingAs($hirer, 'api')->call('get', 'api/requests/' . $request->id . '/reject')->assertStatus(403);
 
     }
 

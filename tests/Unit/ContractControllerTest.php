@@ -7,10 +7,11 @@ use App\Contract;
 use Tests\TestCase;
 //use Illuminate\Foundation\Testing\DatabaseMigrations;
 //use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Exceptions\Handler;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 
 class ContractControllerTest extends TestCase
-{
-
+{ 
     public function getAnyHirer() {
         $hirer = User::where(['role' => 'hirer'])->inRandomOrder()->firstOrFail();
 
@@ -41,21 +42,21 @@ class ContractControllerTest extends TestCase
     }
 
     public function getActiveFreelancer() {
-        $activeFreelancerName = Contract::where('status', 'active')->inRandomOrder()->firstOrFail()->freelancer;
+        $activeFreelancerId = Contract::where('status', 'active')->inRandomOrder()->firstOrFail()->freelancer_id;
 
-        $activeFreelancer = User::where(['name'=>$activeFreelancerName])->inRandomOrder()->firstOrFail();
+        $activeFreelancer = User::findOrFail($activeFreelancerId);
 
         return $activeFreelancer;
 
     }
 
 
-    public function getContractByEmail($user, $email) {
-
+    public function getContractsById($user, $userId) {
+        
         if($user->role === 'hirer') {
-            return Contract::where(['hirer_email'=>$email]);
+            return Contract::where(['hirer_id'=>$userId]);
         } elseif($user->role === 'freelancer') {
-           return Contract::where(['freelancer_email'=>$email]);
+           return Contract::where(['freelancer_id'=>$userId]);
         } 
 
         abort(500, 'Invalid role: ' . $user->role);
@@ -76,7 +77,7 @@ class ContractControllerTest extends TestCase
         
         $hirer = $this->getOpenHirer();
 
-        $numberOfUserContracts = $this->getContractByEmail($hirer, $hirer->email)->count();       
+        $numberOfUserContracts = $this->getContractsById($hirer, $hirer->id)->count();       
         $indexResponse = $this->actingAs($hirer, 'api')->call('get', '/api/contracts')->assertStatus(200)->assertJsonCount($numberOfUserContracts);
 
     }
@@ -85,7 +86,7 @@ class ContractControllerTest extends TestCase
         
         $freelancer = $this->getActiveFreelancer();
 
-        $numberOfUserContracts = $this->getContractByEmail($freelancer, $freelancer->email)->count();       
+        $numberOfUserContracts = $this->getContractsById($freelancer, $freelancer->id)->count();       
         $indexResponse = $this->actingAs($freelancer, 'api')->call('get', '/api/contracts')->assertStatus(200)->assertJsonCount($numberOfUserContracts);
 
     }
@@ -94,33 +95,28 @@ class ContractControllerTest extends TestCase
 
     public function testStore() 
     {
-       $hirer = $this->getAnyHirer(); $latestContract = null;
+       $hirer = $this->getAnyHirer(); 
 
        $newContract = ['title' => 'Test', 'description' => 'test test test', 'price'=>100,
                     'deadline_at' => '2020-12-20 20:20:20']; 
 
-       $storeResponse = $this->actingAs($hirer, 'api')->post('/api/contracts', $newContract)->assertJson(['success'=>true]);
+       $storeResponse = $this->actingAs($hirer, 'api')->post('/api/contracts', $newContract)->assertStatus(201);
 
-       // Get the last added contract in and confirm that it has the same title as the one just created
-       $latestContract = $this->getContractByEmail($hirer, $hirer->email)->orderBy('created_at', 'desc')->first();
-
-       $this->assertEquals($latestContract->title, $newContract['title']);
     }
 
     /* Test update() action */
 
     public function testUpdate() {
+
         $hirer = $this->getOpenHirer();
         $updatedContract = ['title' => 'Updated Test', 'description' => 'test test test', 'price'=>100,
                         'deadline_at' => '2020-12-20 20:20:20']; 
 
-        $latestContract = $this->getContractByEmail($hirer, $hirer->email)->orderBy('created_at', 'desc')->first();
+        $latestContract = $this->getContractsById($hirer, $hirer->id)->orderBy('created_at', 'desc')->first();
 
         // Edit the latest created contract
-        $editResponse = $this->actingAs($hirer, 'api')->call('put', '/api/contracts/' . $latestContract->id, $updatedContract)->assertStatus(200)->assertJson(['success'=>true]);
+        $editResponse = $this->actingAs($hirer, 'api')->call('put', '/api/contracts/' . $latestContract->id, $updatedContract)->assertStatus(200);
         
-        //Assert that the title of the latest created contract has updated title
-        $this->assertEquals(Contract::find($latestContract->id)->title, $updatedContract['title']);
     }
         
 
@@ -131,13 +127,10 @@ class ContractControllerTest extends TestCase
 
         $hirer = $this->getOpenHirer();
 
-        $latestContract = $this->getContractByEmail($hirer, $hirer->email)->orderBy('created_at', 'desc')->first();
+        $latestContract = $this->getContractsById($hirer, $hirer->id)->orderBy('created_at', 'desc')->first();
         $latestContractId = $latestContract->id;
-        $destroyResponse = $this->actingAs($hirer, 'api')->call('delete', 'api/contracts/' . $latestContractId)->assertStatus(200)->assertJson(['success'=>true]); 
+        $destroyResponse = $this->actingAs($hirer, 'api')->call('delete', 'api/contracts/' . $latestContractId)->assertStatus(200); 
 
-        // Assert database doesn't have the contract that was just deleted
-
-        $this->assertDatabaseMissing('contracts', ['id'=>$latestContractId]);
     }
 
 
@@ -147,9 +140,9 @@ class ContractControllerTest extends TestCase
 
         $freelancer = $this->getAnyFreelancer();
 
-        $openContractsCount = Contract::where(['status'=>'open'])->count();
+        $openContractsCount = Contract::where('status', 'open')->count();
 
-        $browse = $this->actingAs($freelancer, 'api')->call('get', 'api/browse')->assertStatus(200)->assertJsonCount($openContractsCount);
+        $this->actingAs($freelancer, 'api')->call('get', 'api/browse')->assertStatus(200)->assertJsonCount($openContractsCount);
 
     }
 
@@ -167,55 +160,56 @@ class ContractControllerTest extends TestCase
 
         $randomOpenContract = Contract::where(['hirer_id'=>$hirer->id, 'status'=>'open'])->first();
         $randomOpenContractId = $randomOpenContract->id;
-        $this->actingAs($hirer, 'api')->call('put', 'api/enter-contract/'.$randomOpenContractId, $freelancerInfo)->assertStatus(200)->assertJson(['success'=>true]);
 
-        $this->assertDatabaseHas('contracts', ['id'=>$randomOpenContractId, 'freelancer_id'=>$freelancerInfo['id'], 'freelancer'=>$freelancerInfo['name'], 
-                                                'freelancer_email' => $freelancerInfo['email'], 'status'=>'active']);
+        $this->actingAs($hirer, 'api')->call('put', 'api/contracts/'.$randomOpenContractId.'/enter', $freelancerInfo)->assertStatus(200);
+
+    }
+
+    public function testEnterNonOpenContract() {
+
+        $contract = Contract::where('status','<>','open')->inRandomOrder()->first();
+
+        $hirer = User::findOrFail($contract->hirer_id);
+        $freelancer = $this->getAnyFreelancer();
+
+        $freelancerInfo = ['id' => $freelancer->id, 'name' => $freelancer->name, 'email' => $freelancer->email];
+
+        $this->actingAs($hirer, 'api')->call('put', 'api/contracts/'.$contract->id.'/enter', $freelancerInfo)->assertStatus(403);
 
     }
 
     /* Test show() action [HF] */
 
-    public function testShowForHirers() {
+/*   public function testShowForHirers() {
         
         $hirer = $this->getOpenHirer();
-        $randomContract = $this->getContractByEmail($hirer, $hirer->email)->inRandomOrder()->first();  
-        $showResponse = $this->actingAs($hirer, 'web')->call('get', '/contracts/' . $randomContract->id)->assertStatus(200)->assertViewIs('show.hirer_view')->assertViewHas('contract', $randomContract);       
+        $randomContract = $this->getContractsById($hirer, $hirer->id)->inRandomOrder()->first();  
+        $showResponse = $this->actingAs($hirer, 'api')->call('get', 'api/contracts/' . $randomContract->id)->assertStatus(200);    
 
     }
 
     public function testShowForFreelancers() {
         
         $freelancer = $this->getActiveFreelancer();
-        $randomContract = $this->getContractByEmail($freelancer, $freelancer->email)->inRandomOrder()->first();  
-        $showResponse = $this->actingAs($freelancer, 'web')->call('get', '/contracts/' . $randomContract->id)->assertStatus(200)->assertViewIs('show.freelancer_view')->assertViewHas('contract', $randomContract);       
+        $randomContract = $this->getContractsById($freelancer, $freelancer->id)->inRandomOrder()->first();  
+        $showResponse = $this->actingAs($freelancer, 'api')->call('get', 'api/contracts/' . $randomContract->id)->assertStatus(200);
 
-    }
+    }*/
 
-    public function testMakePayment() {
+    public function testClose() {
 
-        $contract = Contract::where(['status'=>'active'])->inRandomOrder()->firstOrFail();
+        $contract = Contract::where(['status'=>'active'])->inRandomOrder()->get()->reject(function($contract) {
+            User::where('id', $contract->hirer_id)->firstOrFail()->balance < $contract->price;
+        })->first();
         
-        $paymentRequest = ['contract_id'=>encrypt($contract->id), 'hirer_email' => encrypt($contract->hirer_email), 'freelancer_email' => encrypt($contract->freelancer_email)];
 
-        $hirer = User::where('email', $contract->hirer_email)->first();
-        $initHirerBalance = $hirer->balance;
+        $hirer = User::where('email', $contract->hirer_email)->firstOrFail();
+        //$initHirerBalance = $hirer->balance;
 
-        $freelancer = User::where('email', $contract->freelancer_email)->first();
-        $initFreelancerBalance = $freelancer->balance;
+        $freelancer = User::where('email', $contract->freelancer_email)->firstOrFail();
+        //$initFreelancerBalance = $freelancer->balance;
         
-        if($this->actingAs($hirer, 'api')->call('post', 'api/make-payment', $paymentRequest)->assertStatus(200)->assertJson(['success'=>true])) {
-
-            $newHirerBalance = User::where(['email'=>$hirer->email])->first()->balance;
-            $newFreelancerBalance = User::where(['email'=>$freelancer->email])->first()->balance;
-            $newContractInstance = Contract::where(['id'=>$contract->id, 'hirer_email' => $hirer->email, 
-                                                    'freelancer_email'=>$freelancer->email])->first();
-    
-            $this->assertEquals($initHirerBalance - $contract->price, $newHirerBalance);
-            $this->assertEquals($initFreelancerBalance + $contract->price, $newFreelancerBalance);
-            $this->assertTrue($newContractInstance->status === 'closed');
-
-        }
+        $this->actingAs($hirer, 'api')->call('get', 'api/contracts/' . $contract->id . '/close')->assertStatus(200);
 
     }
 
@@ -226,12 +220,9 @@ class ContractControllerTest extends TestCase
         $contract->price = 100000;
         $contract->save();
         
-
-        $requestData = ['contract_id'=>encrypt($contract->id), 'hirer_email' => encrypt($contract->hirer_email), 'freelancer_email' => encrypt($contract->freelancer_email)];
-        
         $hirer = User::where('email', $contract->hirer_email)->first();
 
-        $this->actingAs($hirer, 'api')->call('post', 'api/make-payment', $requestData)->assertStatus(200)->assertJson(['success'=>false, 'message' => 'Insufficient funds']);
+        $this->actingAs($hirer, 'api')->call('get', 'api/contracts/' . $contract->id . '/close')->assertStatus(403);
 
     }
 
