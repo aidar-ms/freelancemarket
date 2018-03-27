@@ -13,6 +13,16 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 
 
 class RequestControllerTest extends TestCase {
+    /**
+     * LEGEND
+     * 
+     * [H] - hirer method
+     * [F] - freelancer method
+     * [HF] - mixed method
+     * 
+     */
+
+    /** LOCAL UTILITIES **/
 
     public function getOpenContract() {
         return Contract::where('status', 'open')->inRandomOrder()->firstOrFail();
@@ -51,7 +61,11 @@ class RequestControllerTest extends TestCase {
     public function getAnyFreelancer() {
         return User::where('role', 'freelancer')->inRandomOrder()->firstOrFail();
     }
+    // ------------------------------------------------------------------------- //
 
+    //**  TESTS **/
+
+    // Check request listing features [H]
     public function testIfThereAreAnyRequests() {
         $this->assertGreaterThan(0, Request::count());
     }
@@ -75,6 +89,7 @@ class RequestControllerTest extends TestCase {
 
     }
 
+    // Try to send a request to an open contract [F]
     public function testSend() {
 
         $contract = $this->getOpenContract();
@@ -86,6 +101,7 @@ class RequestControllerTest extends TestCase {
 
     }
 
+    // Test if one request per contract rule applies [F]
     public function testSendIfRequestHasBeenMade() {
        
         $request = Request::inRandomOrder()->firstOrFail();
@@ -95,6 +111,7 @@ class RequestControllerTest extends TestCase {
         $this->actingAs($freelancer, 'api')->call('get', 'api/requests/' . $contract->id . '/send' )->assertStatus(403);
     }
 
+    // Accept a request [H]
     public function testAccept() {
 
         $request = Request::where('status', 'sent')->inRandomOrder()->first();
@@ -106,6 +123,7 @@ class RequestControllerTest extends TestCase {
 
     }
 
+    // Accept a non-existing request [H]
     public function testAcceptNonExisting() {
 
         $nullRequestId = rand(100, 1000);
@@ -115,6 +133,7 @@ class RequestControllerTest extends TestCase {
         $this->actingAs($hirer, 'api')->call('get', 'api/requests/' . $nullRequestId . '/accept')->assertStatus(403);
     }
 
+    // Reject a request [H]
     public function testReject() {
         $request = Request::where('status', 'sent')->inRandomOrder()->first();
         $hirer = User::where('id', $request->hirer_id)->first();
@@ -127,6 +146,7 @@ class RequestControllerTest extends TestCase {
 
     }
 
+    // Reject a non-existing request [H]
     public function testRejectNonExisting() {
 
         $nullRequestId = rand(100, 1000);
@@ -137,6 +157,7 @@ class RequestControllerTest extends TestCase {
 
     }
 
+    // Reject a non-pending request [H]
     public function testRejectNonPendingRequest() {
 
         $request = Request::where('status', '<>', 'sent')->inRandomOrder()->first();

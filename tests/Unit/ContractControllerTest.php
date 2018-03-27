@@ -12,6 +12,15 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 
 class ContractControllerTest extends TestCase
 { 
+    /**
+     * LEGEND
+     * 
+     * [H] - hirer method
+     * [F] - freelancer method
+     * [HF] - mixed method
+     * 
+     */
+
     public function getAnyHirer() {
         $hirer = User::where(['role' => 'hirer'])->inRandomOrder()->firstOrFail();
 
@@ -62,6 +71,9 @@ class ContractControllerTest extends TestCase
         abort(500, 'Invalid role: ' . $user->role);
     }
 
+    /* TESTS START HERE */
+
+    // Test if isHirer middleware will block a freelancer's access to hirer specific actions
     public function testIsHirerMiddleware() {
         $contract = Contract::where('status', 'open')->inRandomOrder()->first();
         $updatedContract = ['title' => 'Updated Test', 'description' => 'test test test', 'price'=>100,
@@ -165,6 +177,7 @@ class ContractControllerTest extends TestCase
 
     }
 
+    // Attempt to enter a contract with active or closed status. Should get 403 response
     public function testEnterNonOpenContract() {
 
         $contract = Contract::where('status','<>','open')->inRandomOrder()->first();
@@ -178,24 +191,7 @@ class ContractControllerTest extends TestCase
 
     }
 
-    /* Test show() action [HF] */
-
-/*   public function testShowForHirers() {
-        
-        $hirer = $this->getOpenHirer();
-        $randomContract = $this->getContractsById($hirer, $hirer->id)->inRandomOrder()->first();  
-        $showResponse = $this->actingAs($hirer, 'api')->call('get', 'api/contracts/' . $randomContract->id)->assertStatus(200);    
-
-    }
-
-    public function testShowForFreelancers() {
-        
-        $freelancer = $this->getActiveFreelancer();
-        $randomContract = $this->getContractsById($freelancer, $freelancer->id)->inRandomOrder()->first();  
-        $showResponse = $this->actingAs($freelancer, 'api')->call('get', 'api/contracts/' . $randomContract->id)->assertStatus(200);
-
-    }*/
-
+    // test close() action [H]
     public function testClose() {
 
         $contract = Contract::where(['status'=>'active'])->inRandomOrder()->get()->reject(function($contract) {
@@ -204,21 +200,21 @@ class ContractControllerTest extends TestCase
         
 
         $hirer = User::where('email', $contract->hirer_email)->firstOrFail();
-        //$initHirerBalance = $hirer->balance;
 
         $freelancer = User::where('email', $contract->freelancer_email)->firstOrFail();
-        //$initFreelancerBalance = $freelancer->balance;
         
         $this->actingAs($hirer, 'api')->call('get', 'api/contracts/' . $contract->id . '/close')->assertStatus(200);
 
     }
 
+    // Attempt to pay a contract with insufficient account balance. Should get 403 response
     public function testInsufficientFunds() {
 
-        // Jack up a contract's price
+        /** Jack up a contract's price **/
         $contract = Contract::where(['status' => 'active'])->inRandomOrder()->first();
         $contract->price = 100000;
         $contract->save();
+        /** ------------------------- **/
         
         $hirer = User::where('email', $contract->hirer_email)->first();
 
