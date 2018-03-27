@@ -77,6 +77,9 @@
 
                 axios.put('/api/contracts/'+contract.id, this.contract2Send)
                     .then(function(response) {
+                        if(response.status === 200) {
+                            alert('Contract has been updated');
+                        }
                         console.log(response);
                     })
                     .catch(function(error) {
@@ -87,7 +90,9 @@
             deleteContract(contract) {
                 axios.delete('/api/contracts/'+contract.id, this.contract)
                     .then(function(response) {
-                        alert('Contract deleted');
+                        if(response.status === 200) {
+                            alert('Contract deleted');
+                        }
                         console.log(response);
                     })
                     .catch(function(error) {

@@ -84,6 +84,8 @@
 
                 axios.put('/api/contracts/' + request.contract_id + '/enter', this.freelancer)
                     .then(function(response) {
+                        if (response.status === 200) 
+                            alert('Contract assigned');
                         console.log(response);
                     })
                     .catch(function(error) {

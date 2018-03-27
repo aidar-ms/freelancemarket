@@ -41,6 +41,9 @@
                 axios
                     .post('/api/contracts', vm.contract)
                     .then(function(response) {
+                        if(response.status === 201) {
+                            alert('Contract posted');
+                        }
                         console.log(response);
                     })
                     .catch(function (error) {

@@ -38,6 +38,9 @@
                 axios
                     .get('api/requests/'+ vm.data.contract_id +'/send')
                     .then(function(response) {
+                        if(response.status === 201) {
+                            alert('Request has been sent');
+                        }
                         console.log(response);
                     })
                     .catch(function (error) {
