@@ -47081,6 +47081,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             var vm = this;
 
             axios.post('/api/contracts', vm.contract).then(function (response) {
+                if (response.status === 201) {
+                    alert('Contract posted');
+                }
                 console.log(response);
             }).catch(function (error) {
                 console.log(error);
@@ -47363,6 +47366,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             this.freelancer.email = request.freelancer_email;
 
             axios.put('/api/contracts/' + request.contract_id + '/enter', this.freelancer).then(function (response) {
+                if (response.status === 200) alert('Contract assigned');
                 console.log(response);
             }).catch(function (error) {
                 if (error.response.status === 403) {
@@ -47562,6 +47566,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             var vm = this;
 
             axios.get('api/requests/' + vm.data.contract_id + '/send').then(function (response) {
+                if (response.status === 201) {
+                    alert('Request has been sent');
+                }
                 console.log(response);
             }).catch(function (error) {
                 console.log(error.response);
@@ -48287,6 +48294,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             this.contract2Send.deadline_at = contract.deadline_at;
 
             axios.put('/api/contracts/' + contract.id, this.contract2Send).then(function (response) {
+                if (response.status === 200) {
+                    alert('Contract has been updated');
+                }
                 console.log(response);
             }).catch(function (error) {
                 console.log(error);
@@ -48294,7 +48304,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         },
         deleteContract: function deleteContract(contract) {
             axios.delete('/api/contracts/' + contract.id, this.contract).then(function (response) {
-                alert('Contract deleted');
+                if (response.status === 200) {
+                    alert('Contract deleted');
+                }
                 console.log(response);
             }).catch(function (error) {
                 console.log(error);
